@@ -111,7 +111,23 @@
 </style>
 </head>
 <body>
-<div class="app">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<div id="authOverlay" style="position:fixed;inset:0;background:var(--paper-50);z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="width:360px;max-width:90vw;background:var(--paper-0);border:1px solid var(--line);padding:32px;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-family:'Fraunces',serif;font-weight:700;font-size:24px;">Credit Desk</div>
+      <div style="font-size:12px;color:var(--ink-500);margin-top:4px;">سجّل دخولك للمتابعة</div>
+    </div>
+    <div class="field"><label>الإيميل</label><input id="authEmail" type="email" style="direction:ltr;text-align:left;font-family:'IBM Plex Mono',monospace;" placeholder="name@example.com"></div>
+    <div class="field"><label>كلمة المرور</label><input id="authPassword" type="password" style="direction:ltr;text-align:left;font-family:'IBM Plex Mono',monospace;"></div>
+    <div id="authError" style="font-size:12px;color:var(--negative);margin-bottom:10px;"></div>
+    <button class="btn primary" style="width:100%;margin-bottom:8px;" onclick="handleLogin()">تسجيل الدخول</button>
+    <button class="btn" style="width:100%;" onclick="handleSignup()">حساب جديد (Sign up)</button>
+    <div id="authStatus" style="font-size:11.5px;color:var(--ink-500);margin-top:12px;text-align:center;"></div>
+  </div>
+</div>
+
+<div class="app" id="mainApp" style="display:none;">
   <header class="top">
     <div class="brand"><span class="mark">Credit Desk</span><span class="sub" data-ar=" — النظام الموحد لدراسات التمويل: من الإدخال إلى تقرير البنك" data-en=" — Unified Financing Study System: From Input to Bank Report"> — النظام الموحد لدراسات التمويل: من الإدخال إلى تقرير البنك</span></div>
     <div class="top-meta">UNIFIED MODEL v1<br><span class="mono" id="stamp"></span></div>
@@ -124,6 +140,7 @@
       <span class="audit-badge" id="auditBadge">AUDIT —</span>
       <button onclick="window.print()">🖨 طباعة التاب الحالي</button>
       <button onclick="exportToExcel()">Export Excel ↓</button>
+      <button onclick="handleLogout()" style="background:var(--negative);">خروج</button>
     </div>
   </div>
 
@@ -457,9 +474,9 @@
       </div>
     </div>
 
-    <div class="panel"><div class="panel-head"><span>تخزين سحابي إضافي (لو الملف مفتوح جوه Claude)</span><span>Bonus: Cloud Save inside Claude</span></div>
+    <div class="panel"><div class="panel-head"><span>الحفظ السحابي (حسابك الشخصي)</span><span>Cloud Save (Your Account)</span></div>
       <div class="panel-body">
-        <div class="note">هذا القسم يعمل فقط لو الملف مفتوح كـ Artifact داخل شات Claude. لو نزّلت الملف وفتحته من جهازك مباشرة، استخدم قسم "ملف الإعدادات المحمول" فوق بدلًا منه.</div>
+        <div class="note">دلوقتي بتشتغل بحسابك الحقيقي (سجّلت دخول بإيميلك) — أي صفقة تحفظها هنا بتتخزن في قاعدة بياناتك على Supabase، وتقدر توصلها من أي جهاز بمجرد ما تسجّل دخول بنفس الإيميل.</div>
         <div class="row2">
           <div class="field"><label>اسم الصفقة المحفوظة</label><input id="saveDealName" style="direction:rtl;text-align:right;font-family:'IBM Plex Sans Arabic'" value=""></div>
           <div class="field" style="display:flex;align-items:flex-end;"><button class="btn no-print" onclick="saveDeal()">حفظ في قاعدة البيانات السحابية</button></div>
@@ -1729,9 +1746,52 @@ function applyDealInputs(data){
   buildHotelYearTable(); renderTranches(); renderRepayTable();
   compute();
 }
-function storageAvailable(){ return typeof window!=='undefined' && !!window.storage && typeof window.storage.set==='function'; }
+// ---------------- Supabase auth + real database ----------------
+const SUPABASE_URL = 'https://kkztnksusxbghylsvfgt.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrenRua3N1c3hiZ2h5bHN2Zmd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ0NTkyOTcsImV4cCI6MjEwMDAzNTI5N30.HQ9kqxT0bkq4j9Ww2yuXXUavQWkxEXOoGXlkeupeTCg';
+let supabaseClient = null;
+try{
+  if(typeof window!=='undefined' && window.supabase && window.supabase.createClient){
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+}catch(e){ console.error('Supabase init failed', e); }
 
-// ---------------- Portable JSON config export/import (works anywhere, no Claude dependency) ----------------
+async function checkAuthState(){
+  if(!supabaseClient){ showAuthOverlay('تعذر تحميل مكتبة Supabase — تأكد إنك متصل بالإنترنت وحدّث الصفحة.'); return; }
+  const { data:{ session } } = await supabaseClient.auth.getSession();
+  if(session){ showMainApp(); loadDealsList(); }
+  else { showAuthOverlay(); }
+  supabaseClient.auth.onAuthStateChange((event, session)=>{
+    if(session){ showMainApp(); loadDealsList(); } else { showAuthOverlay(); }
+  });
+}
+function showMainApp(){ el('authOverlay').style.display='none'; el('mainApp').style.display='block'; }
+function showAuthOverlay(msg){ el('authOverlay').style.display='flex'; el('mainApp').style.display='none'; if(msg){ el('authError').textContent = msg; } }
+
+async function handleLogin(){
+  const email = el('authEmail').value.trim(), password = el('authPassword').value;
+  el('authError').textContent=''; el('authStatus').textContent='جارِ الدخول...';
+  if(!supabaseClient){ el('authError').textContent='الخدمة غير متاحة حاليًا.'; return; }
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if(error){ el('authError').textContent = error.message; el('authStatus').textContent=''; }
+}
+async function handleSignup(){
+  const email = el('authEmail').value.trim(), password = el('authPassword').value;
+  el('authError').textContent=''; el('authStatus').textContent='جارِ إنشاء الحساب...';
+  if(!supabaseClient){ el('authError').textContent='الخدمة غير متاحة حاليًا.'; return; }
+  if(password.length<6){ el('authError').textContent='كلمة المرور لازم تكون 6 حروف/أرقام على الأقل.'; el('authStatus').textContent=''; return; }
+  const { error } = await supabaseClient.auth.signUp({ email, password });
+  if(error){ el('authError').textContent = error.message; el('authStatus').textContent=''; }
+  else { el('authStatus').textContent='تم إنشاء الحساب! لو مطلوب تأكيد، افتح إيميلك ودوس على رابط التأكيد ثم سجّل الدخول.'; }
+}
+async function handleLogout(){
+  if(!supabaseClient) return;
+  await supabaseClient.auth.signOut();
+}
+
+function storageAvailable(){ return !!supabaseClient; }
+
+// ---------------- Portable JSON config export/import (works anywhere, no login needed) ----------------
 function exportConfigJSON(){
   try{
     const payload = { savedAt:new Date().toISOString(), appVersion:'unified-financing-system', data:collectDealInputs() };
@@ -1769,57 +1829,40 @@ function importConfigJSON(evt){
 async function saveDeal(){
   const name = el('saveDealName').value.trim();
   if(!name){ alert('اكتب اسم للصفقة الأول'); return; }
-  if(!storageAvailable()){
-    el('saveStatus').innerHTML = '⚠ الحفظ السحابي متاح فقط لو الملف مفتوح كـ Artifact جوه شات Claude. لو الملف عندك محفوظ محليًا (نزّلته وفتحته دبل-كليك)، استخدم بدلًا منه زرار "تصدير Excel" لحفظ نسخة على جهازك.';
-    el('saveStatus').style.color='var(--brass)';
-    return;
-  }
+  if(!storageAvailable()){ el('saveStatus').textContent='الخدمة غير متاحة حاليًا.'; el('saveStatus').style.color='var(--negative)'; return; }
   try{
-    const key = 'deal:'+name;
-    await window.storage.set(key, JSON.stringify({name, savedAt:new Date().toISOString(), data:collectDealInputs()}), false);
+    const { data:{ user } } = await supabaseClient.auth.getUser();
+    const { error } = await supabaseClient.from('deals').insert({ user_id:user.id, name, data:collectDealInputs() });
+    if(error) throw error;
     el('saveStatus').textContent = `تم الحفظ: ${name} — ${new Date().toLocaleString('ar-EG')}`;
     el('saveStatus').style.color='var(--positive)';
     loadDealsList();
   }catch(err){ el('saveStatus').textContent = 'خطأ في الحفظ: '+err.message; el('saveStatus').style.color='var(--negative)'; }
 }
 async function loadDealsList(){
-  if(!storageAvailable()){
-    el('dealsListBody').innerHTML = `<div class="note" style="margin:0;">
-      <b>الحفظ السحابي غير متاح في هذا الوضع.</b><br>
-      الملف ده لما بيتفتح <b>جوه شات Claude مباشرة</b> (كـ Artifact)، الحفظ بيبقى مربوط بحسابك على Claude وتقدر توصله من أي جهاز.<br>
-      لو نزّلت الملف على جهازك وفتحته دبل-كليك، متصفحك مش بيدعم الميزة دي — استخدم "تصدير Excel" بدلًا منها لحفظ نسخة، أو ابعتلي الملف تاني هنا في الشات لو عاوز تكمل عليه.
-    </div>`;
-    return;
-  }
+  if(!storageAvailable()) return;
   try{
-    const res = await window.storage.list('deal:', false);
-    const keys = res? res.keys : [];
-    if(!keys.length){ el('dealsListBody').innerHTML = '<span style="font-size:12px;color:var(--ink-500);">لا توجد صفقات محفوظة بعد.</span>'; return; }
-    let html='';
-    for(const k of keys){
-      const r = await window.storage.get(k, false);
-      if(!r) continue;
-      const parsed = JSON.parse(r.value);
-      html += `<div class="cov-row"><div><div class="cov-name">${parsed.name}</div><div class="cov-detail">حُفظت: ${new Date(parsed.savedAt).toLocaleString('ar-EG')}</div></div>
-        <div><button class="btn no-print" onclick='loadDealByKey("${k}")'>فتح</button> <button class="btn no-print" onclick='deleteDeal("${k}")'>حذف</button></div></div>`;
-    }
-    el('dealsListBody').innerHTML = html;
+    const { data, error } = await supabaseClient.from('deals').select('id,name,saved_at').order('saved_at', {ascending:false});
+    if(error) throw error;
+    if(!data.length){ el('dealsListBody').innerHTML = '<span style="font-size:12px;color:var(--ink-500);">لا توجد صفقات محفوظة بعد.</span>'; return; }
+    el('dealsListBody').innerHTML = data.map(row=>`
+      <div class="cov-row"><div><div class="cov-name">${row.name}</div><div class="cov-detail">حُفظت: ${new Date(row.saved_at).toLocaleString('ar-EG')}</div></div>
+        <div><button class="btn no-print" onclick='loadDealByKey("${row.id}")'>فتح</button> <button class="btn no-print" onclick='deleteDeal("${row.id}")'>حذف</button></div></div>`).join('');
   }catch(err){ el('dealsListBody').innerHTML = 'تعذر تحميل القائمة: '+err.message; }
 }
-async function loadDealByKey(key){
+async function loadDealByKey(id){
   if(!storageAvailable()) return;
   try{
-    const r = await window.storage.get(key, false);
-    if(!r) return;
-    const parsed = JSON.parse(r.value);
-    applyDealInputs(parsed.data);
-    alert('تم فتح الصفقة: '+parsed.name);
+    const { data, error } = await supabaseClient.from('deals').select('name,data').eq('id', id).single();
+    if(error) throw error;
+    applyDealInputs(data.data);
+    alert('تم فتح الصفقة: '+data.name);
   }catch(err){ alert('خطأ في الفتح: '+err.message); }
 }
-async function deleteDeal(key){
+async function deleteDeal(id){
   if(!storageAvailable()) return;
   if(!confirm('حذف هذه الصفقة نهائيًا؟')) return;
-  try{ await window.storage.delete(key, false); loadDealsList(); }catch(err){ alert('خطأ: '+err.message); }
+  try{ await supabaseClient.from('deals').delete().eq('id', id); loadDealsList(); }catch(err){ alert('خطأ: '+err.message); }
 }
 
 // ---------------- Excel export (SheetJS) ----------------
@@ -1907,7 +1950,7 @@ document.querySelectorAll('input, select').forEach(i=> i.addEventListener('input
 document.querySelectorAll('.tab-panel.active').forEach(p=> p.classList.add('print-active'));
 applyStaticLang();
 compute();
-loadDealsList();
+checkAuthState();
 </script>
 </body>
 </html>
