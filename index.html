@@ -252,6 +252,7 @@
     <div class="grid2">
       <div class="panel"><div class="panel-head"><span>الميزانية الافتتاحية — سنة الأساس (قبل التمويل)</span><span>Opening Balance</span></div>
         <div class="panel-body">
+          <div class="note" style="margin-bottom:14px;">⚠ اكتب الرقم كامل من غير اختصار — مثلاً 30 مليون دولار = <span class="mono">30000000</span> (مش 30). النظام بيلخّص الأرقام في العرض بس تلقائيًا (30.00M).</div>
           <div class="sect">الأصول</div>
           <div class="row2"><div class="field"><label>النقدية</label><input id="cash0" type="number" value="8000000"></div><div class="field"><label>عملاء (AR)</label><input id="ar0" type="number" value="3000000"></div></div>
           <div class="row2"><div class="field"><label>مخزون</label><input id="inv0" type="number" value="1500000"></div><div class="field"><label>أصول متداولة أخرى</label><input id="otherCA0" type="number" value="2000000"></div></div>
@@ -303,6 +304,7 @@
     <div class="kpi-pro-row" id="capexKpi"></div>
     <div class="panel"><div class="panel-head"><span>بنود التكلفة الاستثمارية</span><span>Investment Cost Breakdown</span></div>
       <div class="panel-body">
+        <div class="note" style="margin-bottom:14px;">⚠ اكتب الرقم كامل من غير اختصار — مثلاً 30 مليون دولار = <span class="mono">30000000</span> (مش 30).</div>
         <table class="stmt" id="capexCatTable"></table>
         <div class="row3" style="margin-top:16px;">
           <div class="field"><label>فترة السحب (أرباع سنوية) — الإنشاء</label><input id="constructionQuarters" type="number" value="8"></div>
@@ -1175,11 +1177,11 @@ function compute(){
     </table>
     <div style="margin-top:16px;font-size:11px;color:var(--ink-500);">نموذج أولي بافتراضات قابلة للتعديل، لا يغني عن مراجعة مالية واكتتاب رسمي من الجهة الممولة.</div>`;
 
+  renderUSALI(m);
   renderBankMetrics(m, creditRows);
   renderScorecard(m, creditRows);
   renderDashboard(m, creditRows);
   renderCovCards(m, creditRows);
-  renderUSALI(m);
   renderScenarioManager(m, creditRows);
   renderSensitivity(m);
   const auditResult = renderAudit(m, creditRows);
@@ -1292,6 +1294,7 @@ function computeStressScenario(){
   const rateBps = (+el('stressRateBps').value||0)/10000;
 
   const savedMODEL = MODEL;
+  const savedUSALIDetail = hotelUSALIDetail;
   const occBackup = hotelYearData.occ.slice();
   const adrBackup = hotelYearData.adr.slice();
   const rateBackup = el('loanRate').value;
@@ -1311,6 +1314,7 @@ function computeStressScenario(){
   tranches = tranchesBackup;
   capInterest = capInterestBackup;
   MODEL = savedMODEL;
+  hotelUSALIDetail = savedUSALIDetail;
 
   if(!stressedModel) return null;
   const dscrs = stressedModel.years.map(y=> y.ebitda/((y.interest+y.debtRepay)||1)).filter(v=>isFinite(v));
@@ -1558,6 +1562,7 @@ function renderScenarioManager(m, creditRows){
 function withShadowInputs(occDeltaPts, rateDeltaPts, fn){
   if(el('activityType').value!=='hotel') return null;
   const savedMODEL = MODEL;
+  const savedUSALIDetail = hotelUSALIDetail;
   const occBackup = hotelYearData.occ.slice();
   const rateBackup = el('loanRate').value;
   const tranchesBackup = JSON.parse(JSON.stringify(tranches));
@@ -1574,6 +1579,7 @@ function withShadowInputs(occDeltaPts, rateDeltaPts, fn){
   tranches = tranchesBackup;
   capInterest = capInterestBackup;
   MODEL = savedMODEL;
+  hotelUSALIDetail = savedUSALIDetail;
   return result;
 }
 function sensMetrics(m){
@@ -1759,11 +1765,22 @@ try{
 async function checkAuthState(){
   if(!supabaseClient){ showAuthOverlay('تعذر تحميل مكتبة Supabase — تأكد إنك متصل بالإنترنت وحدّث الصفحة.'); return; }
   const { data:{ session } } = await supabaseClient.auth.getSession();
-  if(session){ showMainApp(); loadDealsList(); }
+  if(session){ showMainApp(); await loadDealsList(); await loadLatestDealAuto(); }
   else { showAuthOverlay(); }
-  supabaseClient.auth.onAuthStateChange((event, session)=>{
-    if(session){ showMainApp(); loadDealsList(); } else { showAuthOverlay(); }
+  supabaseClient.auth.onAuthStateChange(async (event, session)=>{
+    if(session){ showMainApp(); await loadDealsList(); await loadLatestDealAuto(); } else { showAuthOverlay(); }
   });
+}
+async function loadLatestDealAuto(){
+  if(!storageAvailable()) return;
+  try{
+    const { data, error } = await supabaseClient.from('deals').select('id,name,data,saved_at').order('saved_at', {ascending:false}).limit(1);
+    if(error || !data || !data.length) return;
+    applyDealInputs(data[0].data);
+    el('saveDealName').value = data[0].name;
+    el('saveStatus').textContent = `تم تحميل آخر صفقة محفوظة تلقائيًا: ${data[0].name} — ${new Date(data[0].saved_at).toLocaleString('ar-EG')}`;
+    el('saveStatus').style.color = 'var(--positive)';
+  }catch(err){ /* silent — user can still open manually from the list */ }
 }
 function showMainApp(){ el('authOverlay').style.display='none'; el('mainApp').style.display='block'; }
 function showAuthOverlay(msg){ el('authOverlay').style.display='flex'; el('mainApp').style.display='none'; if(msg){ el('authError').textContent = msg; } }
