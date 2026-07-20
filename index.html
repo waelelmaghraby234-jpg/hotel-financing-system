@@ -695,18 +695,21 @@ function computeCapexIDC(){
     debt = totalInvestment*debtPct;
     equity = totalInvestment*equityPct;
     const drawPerQ = debt/quarters;
-    let cumDraw=0, cumIDC=0;
+    const equityPerQ = equity/quarters;
+    let cumDraw=0, cumIDC=0, cumEquity=0;
     schedule = [];
     for(let q=1;q<=totalCapQuarters;q++){
       const isDrawQ = q<=quarters;
       const openingBalance = cumDraw+cumIDC;
       const drawnThisQ = isDrawQ? drawPerQ : 0;
+      const equityThisQ = isDrawQ? equityPerQ : 0; // تمويل ذاتي متزامن (Pari-Passu) مع سحب الدين لنفس النسبة كل ربع
       cumDraw += drawnThisQ;
+      cumEquity += equityThisQ;
       const closingBeforeIDC = cumDraw+cumIDC;
       const avgBal = (openingBalance+closingBeforeIDC)/2;
       const idcQ = avgBal*qRate;
       cumIDC += idcQ;
-      schedule.push({q, phase:isDrawQ?'سحب':'سماح', drawn:drawnThisQ, pctOfLoan: debt? drawnThisQ/debt:0, cumDraw, idcQ, cumIDC});
+      schedule.push({q, phase:isDrawQ?'سحب':'سماح', drawn:drawnThisQ, pctOfLoan: debt? drawnThisQ/debt:0, cumDraw, equityThisQ, cumEquity, idcQ, cumIDC});
     }
     idcTotal = cumIDC;
     totalInvestment = constructionCost+idcTotal;
@@ -723,15 +726,17 @@ function renderCapexIDC(){
   el('loanStartYearDisplay').value = 'Y'+yearLabel(r.loanStartYear)+' (سنة رقم '+r.loanStartYear+')';
 
   el('capexKpi').innerHTML = `
-    <div class="kpi-pro c-positive"><div class="label">حصة المالك (Equity)</div><div class="value mono">${fmt(r.equity)}</div><div class="sub">${pct(r.equityPct*100)} من إجمالي الاستثمار</div></div>
+    <div class="kpi-pro c-positive"><div class="label">حصة المالك (Equity)</div><div class="value mono">${fmt(r.equity)}</div><div class="sub">${pct(r.equityPct*100)} من إجمالي الاستثمار — تُحقن بالتزامن مع سحب الدين</div></div>
     <div class="kpi-pro c-ink"><div class="label">إجمالي الاستثمار</div><div class="value mono">${fmt(r.totalInvestment)}</div><div class="sub">تكلفة إنشاء + IDC</div></div>
     <div class="kpi-pro c-brass"><div class="label">الفوائد المرسملة (IDC)</div><div class="value mono">${fmt(r.idcTotal)}</div><div class="sub">${r.quarters} سحب + ${r.graceQuarters} سماح = ${r.totalCapQuarters} ربع</div></div>
     <div class="kpi-pro"><div class="label">تكلفة الإنشاء</div><div class="value mono">${fmt(r.constructionCost)}</div></div>
   `;
 
-  let html = `<tr><th>الربع</th><th>المرحلة</th><th>المسحوب</th><th>% من القرض</th><th>تراكمي</th><th>IDC ربعي</th><th>IDC تراكمي</th></tr>`;
+  let html = `<tr><th>الربع</th><th>المرحلة</th><th>سحب الدين</th><th>% من القرض</th><th>تراكمي الدين</th><th>تمويل ذاتي (Pari-Passu)</th><th>تراكمي التمويل الذاتي</th><th>نسبة الدين الفعلية</th><th>IDC ربعي</th><th>IDC تراكمي</th></tr>`;
   r.schedule.forEach(s=>{
-    html += `<tr><td>Q${s.q}</td><td>${s.phase}</td><td>${s.drawn?fmt(s.drawn):'—'}</td><td>${s.pctOfLoan?pct(s.pctOfLoan*100):'—'}</td><td>${fmt(s.cumDraw)}</td><td>${fmt(s.idcQ)}</td><td>${fmt(s.cumIDC)}</td></tr>`;
+    const cumTotal = s.cumDraw+s.cumEquity;
+    const actualDebtPct = cumTotal? s.cumDraw/cumTotal : 0;
+    html += `<tr><td>Q${s.q}</td><td>${s.phase}</td><td>${s.drawn?fmt(s.drawn):'—'}</td><td>${s.pctOfLoan?pct(s.pctOfLoan*100):'—'}</td><td>${fmt(s.cumDraw)}</td><td>${s.equityThisQ?fmt(s.equityThisQ):'—'}</td><td>${fmt(s.cumEquity)}</td><td class="mono">${pct(actualDebtPct*100)}</td><td>${fmt(s.idcQ)}</td><td>${fmt(s.cumIDC)}</td></tr>`;
   });
   el('idcTable').innerHTML = html;
   return r;
@@ -947,9 +952,10 @@ function computeModel(){
   const otherDebt0=+el('otherDebt0').value||0;
   let equity0=+el('equity0').value||0;
   const totalAssets0=cash0+ar0+inv0+otherCA0+ppe0+otherNCA0;
+  const trueEquity0 = totalAssets0-(ap0+otherCL0+otherDebt0);
 
   const loanSched = computeLoanFullSchedule();
-  // رأس مال سنة الأساس = الأصول - كل الخصوم بما فيها أصل التمويل الجديد (المفترض أنه مموّل جزءًا من الأصول الحالية)
+  // رأس مال أول سنة تمويل = الأصول - كل الخصوم بما فيها أصل التمويل الجديد (المفترض أنه مموّل جزءًا من الأصول الحالية)
   if(equity0===0) equity0 = totalAssets0-(ap0+otherCL0+otherDebt0+loanSched.principal);
   const annualLoan = {};
   loanSched.rows.forEach(r=>{
@@ -1022,7 +1028,8 @@ function computeModel(){
   const equityValue = ev-netDebt0;
 
   MODEL = {N, years, loanSched, annualLoan, totalFacilityYears, wacc, costEquity, costDebtAT, we, wd, fcf, pvFcf, tv, pvTv, ev, equityValue, netDebt0, taxRate,
-    dealName: el('dealName').value, activityType: el('activityType').value, principal: loanSched.principal, allInRate: loanSched.rate};
+    dealName: el('dealName').value, activityType: el('activityType').value, principal: loanSched.principal, allInRate: loanSched.rate,
+    cash0, ar0, inv0, otherCA0, ppe0, otherNCA0, ap0, otherCL0, otherDebt0, totalAssets0, trueEquity0};
   return MODEL;
 }
 
@@ -1045,6 +1052,17 @@ function renderStmt(tableId, rows){
   el(tableId).innerHTML = html;
 }
 
+function renderBSWithYear0(m, rows){
+  const y0Label = LANG==='en' ? 'Y0 (Pre-Financing)' : 'سنة الأساس (قبل التمويل)';
+  let html = `<tr><th>${LANG==='en'?'Item':'البيان'}</th><th style="background:var(--brass-soft);">${y0Label}</th>`+m.years.map(y=>`<th>Y${yearLabel(y.t)}</th>`).join('')+`</tr>`;
+  rows.forEach(r=>{
+    if(r.section){ html += `<tr class="section"><td colspan="${m.N+2}">${RS(r.section)}</td></tr>`; return; }
+    const y0cell = r.y0!==undefined ? `<td style="background:var(--paper-50);">${fmt(r.y0)}</td>` : '<td>—</td>';
+    html += `<tr class="${r.total?'total':''} ${r.check?'check':''}"><td>${RS(r.label)}</td>${y0cell}`+r.values.map(v=>`<td>${fmt(v)}</td>`).join('')+`</tr>`;
+  });
+  el('bsTable').innerHTML = html;
+}
+
 function compute(){
   renderCapexIDC();
   const m = computeModel(); const N=m.N;
@@ -1065,31 +1083,32 @@ function compute(){
     {label:LB('الضريبة','Income Tax'), values:m.years.map(y=>-y.tax)},
     {label:LB('صافي الربح','Net Profit'), total:true, values:m.years.map(y=>y.netIncome)},
   ]);
-  renderStmt('bsTable', [
+  renderBSWithYear0(m, [
     {section:LB('الأصول غير المتداولة','Non-Current Assets')},
-    {label:LB('صافي الأصول الثابتة','Net Fixed Assets'), values:m.years.map(y=>y.ppeClose)},
-    {label:LB('أصول غير متداولة أخرى','Other Non-Current Assets'), values:m.years.map(()=>+el('otherNCA0').value||0)},
-    {label:LB('إجمالي الأصول غير المتداولة','Total Non-Current Assets'), values:m.years.map(y=>y.ppeClose+(+el('otherNCA0').value||0))},
+    {label:LB('صافي الأصول الثابتة','Net Fixed Assets'), y0:m.ppe0, values:m.years.map(y=>y.ppeClose)},
+    {label:LB('أصول غير متداولة أخرى','Other Non-Current Assets'), y0:m.otherNCA0, values:m.years.map(()=>+el('otherNCA0').value||0)},
+    {label:LB('إجمالي الأصول غير المتداولة','Total Non-Current Assets'), y0:m.ppe0+m.otherNCA0, values:m.years.map(y=>y.ppeClose+(+el('otherNCA0').value||0))},
     {section:LB('الأصول المتداولة','Current Assets')},
-    {label:LB('النقدية','Cash'), values:m.years.map(y=>y.cashClose)},
-    {label:LB('عملاء ومدينون','Accounts Receivable'), values:m.years.map(y=>y.arClose)},
-    {label:LB('مخزون','Inventory'), values:m.years.map(y=>y.invClose)},
-    {label:LB('أصول متداولة أخرى','Other Current Assets'), values:m.years.map(()=>+el('otherCA0').value||0)},
-    {label:LB('إجمالي الأصول المتداولة','Total Current Assets'), values:m.years.map(y=>y.cashClose+y.arClose+y.invClose+(+el('otherCA0').value||0))},
-    {label:LB('إجمالي الأصول','Total Assets'), total:true, values:m.years.map(y=>y.totalAssets)},
+    {label:LB('النقدية','Cash'), y0:m.cash0, values:m.years.map(y=>y.cashClose)},
+    {label:LB('عملاء ومدينون','Accounts Receivable'), y0:m.ar0, values:m.years.map(y=>y.arClose)},
+    {label:LB('مخزون','Inventory'), y0:m.inv0, values:m.years.map(y=>y.invClose)},
+    {label:LB('أصول متداولة أخرى','Other Current Assets'), y0:m.otherCA0, values:m.years.map(()=>+el('otherCA0').value||0)},
+    {label:LB('إجمالي الأصول المتداولة','Total Current Assets'), y0:m.cash0+m.ar0+m.inv0+m.otherCA0, values:m.years.map(y=>y.cashClose+y.arClose+y.invClose+(+el('otherCA0').value||0))},
+    {label:LB('إجمالي الأصول','Total Assets'), total:true, y0:m.totalAssets0, values:m.years.map(y=>y.totalAssets)},
     {section:LB('الخصوم المتداولة','Current Liabilities')},
-    {label:LB('موردون ودائنون','Accounts Payable'), values:m.years.map(y=>y.apClose)},
-    {label:LB('خصوم متداولة أخرى','Other Current Liabilities'), values:m.years.map(()=>+el('otherCL0').value||0)},
-    {label:LB('الجزء المتداول من القرض طويل الأجل (CPLTD)','Current Portion of LT Debt (CPLTD)'), values:m.years.map(y=>y.cpltd)},
-    {label:LB('إجمالي الخصوم المتداولة','Total Current Liabilities'), values:m.years.map(y=>y.apClose+(+el('otherCL0').value||0)+y.cpltd)},
+    {label:LB('موردون ودائنون','Accounts Payable'), y0:m.ap0, values:m.years.map(y=>y.apClose)},
+    {label:LB('خصوم متداولة أخرى','Other Current Liabilities'), y0:m.otherCL0, values:m.years.map(()=>+el('otherCL0').value||0)},
+    {label:LB('الجزء المتداول من القرض طويل الأجل (CPLTD)','Current Portion of LT Debt (CPLTD)'), y0:0, values:m.years.map(y=>y.cpltd)},
+    {label:LB('إجمالي الخصوم المتداولة','Total Current Liabilities'), y0:m.ap0+m.otherCL0, values:m.years.map(y=>y.apClose+(+el('otherCL0').value||0)+y.cpltd)},
     {section:LB('الخصوم غير المتداولة','Non-Current Liabilities')},
-    {label:LB('القرض طويل الأجل (الجزء غير المتداول)','Long-Term Debt (Non-Current Portion)'), values:m.years.map(y=>y.ltdNonCurrent+y.totalDebt-y.facilityBal)},
+    {label:LB('القرض طويل الأجل (الجزء غير المتداول)','Long-Term Debt (Non-Current Portion)'), y0:m.otherDebt0, values:m.years.map(y=>y.ltdNonCurrent+y.totalDebt-y.facilityBal)},
     {section:LB('حقوق الملكية','Shareholders Equity')},
-    {label:LB('رأس المال المدفوع','Paid-in Capital'), values:m.years.map(y=>y.equity0)},
-    {label:LB('أرباح محتجزة','Retained Earnings'), values:m.years.map(y=>y.equityClose-y.equity0)},
-    {label:LB('إجمالي حقوق الملكية','Total Shareholders Equity'), values:m.years.map(y=>y.equityClose)},
-    {label:LB('إجمالي الخصوم وحقوق الملكية','Total Liabilities & Equity'), total:true, values:m.years.map(y=>y.totalLiabEq)},
-    {label:LB('فحص التوازن','Balance Check'), check:true, values:m.years.map(y=>y.checkDiff)},
+    {label:LB('رأس المال المدفوع (سنة الأساس)','Paid-in Capital (Base Year)'), y0:m.trueEquity0, values:m.years.map(y=>y.equity0)},
+    {label:LB('+ تمويل ذاتي جديد يُحقن خلال الإنشاء','+ New Equity Injected During Construction'), y0:0, values:m.years.map(()=> m.years[0].equity0-m.trueEquity0)},
+    {label:LB('أرباح محتجزة','Retained Earnings'), y0:0, values:m.years.map(y=>y.equityClose-y.equity0)},
+    {label:LB('إجمالي حقوق الملكية','Total Shareholders Equity'), y0:m.trueEquity0, values:m.years.map(y=>y.equityClose)},
+    {label:LB('إجمالي الخصوم وحقوق الملكية','Total Liabilities & Equity'), total:true, y0:m.totalAssets0, values:m.years.map(y=>y.totalLiabEq)},
+    {label:LB('فحص التوازن','Balance Check'), check:true, y0:0, values:m.years.map(y=>y.checkDiff)},
   ]);
   renderStmt('cfTable', [
     {section:LB('تشغيلية','Operating')},
