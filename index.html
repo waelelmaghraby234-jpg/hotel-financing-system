@@ -942,7 +942,21 @@ function computeRevenueEbitda(N){
 function computeModel(){
   syncCapexToLoan();
   const N = Math.min(10, Math.max(2, +el('projYears').value||8));
-  const {revenue, ebitda} = computeRevenueEbitda(N);
+  const capexIDC = computeCapexIDC();
+  const operatingStartYear = Math.min(N+1, capexIDC.loanStartYear); // أول سنة تشغيل وسداد معًا
+
+  // تجميع جدول السحب الربعي (تمويل بنكي + ذاتي + فوائد مرسملة) سنويًا لسنوات الإنشاء
+  const annualConstruction = {};
+  capexIDC.schedule.forEach(s=>{
+    const projYear = Math.ceil(s.q/4);
+    annualConstruction[projYear] = annualConstruction[projYear] || {debtDrawn:0, equityInjected:0, idcAdded:0};
+    annualConstruction[projYear].debtDrawn += s.drawn;
+    annualConstruction[projYear].equityInjected += s.equityThisQ;
+    annualConstruction[projYear].idcAdded += s.idcQ;
+  });
+
+  const operatingYearsCount = Math.max(0, N-operatingStartYear+1);
+  const {revenue, ebitda} = computeRevenueEbitda(operatingYearsCount);
 
   const capexPct=(+el('capexPct').value||0)/100, deprRate=(+el('deprRate').value||0)/100, taxRate=(+el('taxRate').value||0)/100;
   const arDays=+el('arDays').value||0, invDays=+el('invDays').value||0, apDays=+el('apDays').value||0, divPayout=(+el('divPayout').value||0)/100;
@@ -950,13 +964,11 @@ function computeModel(){
   const cash0=+el('cash0').value||0, ar0=+el('ar0').value||0, inv0=+el('inv0').value||0, otherCA0=+el('otherCA0').value||0;
   const ppe0=+el('ppe0').value||0, otherNCA0=+el('otherNCA0').value||0, ap0=+el('ap0').value||0, otherCL0=+el('otherCL0').value||0;
   const otherDebt0=+el('otherDebt0').value||0;
-  let equity0=+el('equity0').value||0;
+  let equity0In=+el('equity0').value||0;
   const totalAssets0=cash0+ar0+inv0+otherCA0+ppe0+otherNCA0;
-  const trueEquity0 = totalAssets0-(ap0+otherCL0+otherDebt0);
+  const trueEquity0 = equity0In>0 ? equity0In : totalAssets0-(ap0+otherCL0+otherDebt0);
 
   const loanSched = computeLoanFullSchedule();
-  // رأس مال أول سنة تمويل = الأصول - كل الخصوم بما فيها أصل التمويل الجديد (المفترض أنه مموّل جزءًا من الأصول الحالية)
-  if(equity0===0) equity0 = totalAssets0-(ap0+otherCL0+otherDebt0+loanSched.principal);
   const annualLoan = {};
   loanSched.rows.forEach(r=>{
     annualLoan[r.projYear] = annualLoan[r.projYear] || {interest:0, principal:0, closing:r.closing};
@@ -971,42 +983,75 @@ function computeModel(){
   const companyOtherRevY1=+el('companyOtherRevY1').value||0, companyOtherRevGrowth=(+el('companyOtherRevGrowth').value||0)/100;
   const companyGAY1=+el('companyGAY1').value||0, companyGAGrowth=(+el('companyGAGrowth').value||0)/100;
 
-  let ppeOpen=ppe0, cashOpen=cash0, arOpen=ar0, invOpen=inv0, apOpen=ap0, equityOpen=equity0, facilityBalOpen=loanSched.principal;
+  let ppeOpen=ppe0, cipOpen=0, facilityDebtOpen=0, cashOpen=cash0, arOpen=ar0, invOpen=inv0, apOpen=ap0, equityOpen=trueEquity0;
   const years=[];
   for(let t=1;t<=N;t++){
-    const rev = revenue[t-1];
-    const hotelNOI = ebitda[t-1]; // ربح تشغيل الفندق (حصة المالك) — من محرك USALI
-    const otherRevenue = companyOtherRevY1*Math.pow(1+companyOtherRevGrowth,t-1);
+    const isConstruction = t < operatingStartYear;
+    const isTransition = t === operatingStartYear;
+    const opIdx = t - operatingStartYear; // فهرس سنة التشغيل (0-based)، صالح لو مش سنة إنشاء
+
+    const rev = isConstruction? 0 : (revenue[opIdx]||0);
+    const hotelNOI = isConstruction? 0 : (ebitda[opIdx]||0);
+    const otherRevenue = isConstruction? 0 : companyOtherRevY1*Math.pow(1+companyOtherRevGrowth, opIdx);
     const totalCompanyRevenue = hotelNOI+otherRevenue;
-    const companyGA = companyGAY1*Math.pow(1+companyGAGrowth,t-1);
-    const ebd = totalCompanyRevenue-companyGA; // EBITDA على مستوى الشركة المالكة
-    const depreciation = ppeOpen*deprRate;
+    const companyGA = companyGAY1*Math.pow(1+companyGAGrowth, t-1);
+    const ebd = totalCompanyRevenue-companyGA;
+
+    const constr = annualConstruction[t] || {debtDrawn:0, equityInjected:0, idcAdded:0};
+
+    const depreciationBase = isTransition ? (ppeOpen+cipOpen) : ppeOpen;
+    const depreciation = depreciationBase*deprRate;
     const ebit = ebd-depreciation;
-    const la = annualLoan[t] || {interest:0, principal:0, closing: t>1&&years[t-2]? years[t-2].facilityBal : loanSched.principal};
-    const interest = la.interest;
+
+    const la = annualLoan[t] || {interest:0, principal:0, closing:null};
+    const interest = isConstruction? 0 : la.interest; // فوائد الإنشاء مرسملة (غير مصروفة) — تُضاف لمشروعات تحت التنفيذ بدل قائمة الدخل
     const ebt = ebit-interest;
     const tax = Math.max(0,ebt)*taxRate;
     const netIncome = ebt-tax;
-    const capex = rev*capexPct;
-    const ppeClose = ppeOpen+capex-depreciation;
-    const arClose = rev*(arDays/365), invClose = ebd>0? (rev-ebd)*(invDays/365) : rev*0.1*(invDays/365), apClose = (rev-ebd)*(apDays/365);
+
+    let capex, ppeClose, cipClose;
+    if(isConstruction){
+      capex = constr.debtDrawn+constr.equityInjected; // إنفاق نقدي فعلي على الإنشاء (يستبعد الفوائد المرسملة غير النقدية)
+      cipClose = cipOpen + constr.debtDrawn + constr.equityInjected + constr.idcAdded;
+      ppeClose = Math.max(0, ppeOpen-depreciation);
+    } else if(isTransition){
+      capex = rev*capexPct;
+      ppeClose = (ppeOpen+cipOpen)+capex-depreciation;
+      cipClose = 0;
+    } else {
+      capex = rev*capexPct;
+      ppeClose = ppeOpen+capex-depreciation;
+      cipClose = 0;
+    }
+
+    const arClose = rev*(arDays/365), invClose = ebd>0? (rev-ebd)*(invDays/365) : Math.max(0,rev)*0.1*(invDays/365), apClose = Math.max(0,rev-ebd)*(apDays/365);
     const dWC = (arClose-arOpen)+(invClose-invOpen)-(apClose-apOpen);
     const dividends = Math.max(0,netIncome)*divPayout;
     const cfo = netIncome+depreciation-dWC;
     const cfi = -capex;
-    const debtRepay = la.principal, debtDraw = 0; // draws already embedded in opening principal for this simplified integration
-    const cff = -debtRepay-dividends;
+
+    let debtDraw, debtRepay, cff, facilityDebtClose;
+    if(isConstruction){
+      debtDraw = constr.debtDrawn; debtRepay = 0;
+      cff = constr.debtDrawn+constr.equityInjected-dividends;
+      facilityDebtClose = facilityDebtOpen+constr.debtDrawn+constr.idcAdded;
+    } else {
+      debtDraw = 0; debtRepay = la.principal;
+      cff = -debtRepay-dividends;
+      facilityDebtClose = la.closing!=null ? la.closing : facilityDebtOpen;
+    }
     const netCF = cfo+cfi+cff;
     const cashClose = cashOpen+netCF;
-    const equityClose = equityOpen+netIncome-dividends;
-    const facilityBal = la.closing;
+    const equityClose = equityOpen+netIncome-dividends+(isConstruction? constr.equityInjected:0);
+    const facilityBal = facilityDebtClose;
     const totalDebt = otherDebt0+facilityBal;
-    const totalAssets = cashClose+arClose+invClose+otherCA0+ppeClose+otherNCA0;
+    const totalAssets = cashClose+arClose+invClose+otherCA0+ppeClose+otherNCA0+cipClose;
     const totalLiabEq = apClose+otherCL0+totalDebt+equityClose;
-    years.push({t, revenue:rev, hotelNOI, otherRevenue, companyGA, totalCompanyRevenue, ebitda:ebd, depreciation, ebit, interest, ebt, tax, netIncome, capex, ppeOpen, ppeClose,
+
+    years.push({t, isConstruction, revenue:rev, hotelNOI, otherRevenue, companyGA, totalCompanyRevenue, ebitda:ebd, depreciation, ebit, interest, ebt, tax, netIncome, capex, ppeOpen, ppeClose, cipOpen, cipClose,
       arOpen, arClose, invOpen, invClose, apOpen, apClose, dWC, dividends, cfo, cfi, cff, netCF, cashOpen, cashClose,
-      equityOpen, equityClose, equity0, facilityBal, totalDebt, totalAssets, totalLiabEq, checkDiff: totalAssets-totalLiabEq, debtRepay, debtDraw});
-    ppeOpen=ppeClose; cashOpen=cashClose; arOpen=arClose; invOpen=invClose; apOpen=apClose; equityOpen=equityClose;
+      equityOpen, equityClose, equity0: trueEquity0, facilityBal, totalDebt, totalAssets, totalLiabEq, checkDiff: totalAssets-totalLiabEq, debtRepay, debtDraw});
+    ppeOpen=ppeClose; cipOpen=cipClose; facilityDebtOpen=facilityDebtClose; cashOpen=cashClose; arOpen=arClose; invOpen=invClose; apOpen=apClose; equityOpen=equityClose;
   }
 
   // الجزء المتداول من القرض طويل الأجل (CPLTD) = سداد أصل مجدول للسنة القادمة
@@ -1017,7 +1062,7 @@ function computeModel(){
 
   const rf=(+el('rf').value||0)/100, mrp=(+el('mrp').value||0)/100, beta=+el('beta').value||0, terminalG=(+el('terminalG').value||0)/100;
   const costEquity=rf+beta*mrp, costDebtAT=loanSched.rate*(1-taxRate);
-  const we=equity0/(equity0+otherDebt0+loanSched.principal||1), wd=1-we;
+  const we=trueEquity0/(trueEquity0+otherDebt0+loanSched.principal||1), wd=1-we;
   const wacc=we*costEquity+wd*costDebtAT;
   const fcf = years.map(y=> y.ebit*(1-taxRate)+y.depreciation-y.capex-y.dWC);
   const pvFcf = fcf.map((f,i)=> f/Math.pow(1+wacc,i+1));
@@ -1029,7 +1074,7 @@ function computeModel(){
 
   MODEL = {N, years, loanSched, annualLoan, totalFacilityYears, wacc, costEquity, costDebtAT, we, wd, fcf, pvFcf, tv, pvTv, ev, equityValue, netDebt0, taxRate,
     dealName: el('dealName').value, activityType: el('activityType').value, principal: loanSched.principal, allInRate: loanSched.rate,
-    cash0, ar0, inv0, otherCA0, ppe0, otherNCA0, ap0, otherCL0, otherDebt0, totalAssets0, trueEquity0};
+    cash0, ar0, inv0, otherCA0, ppe0, otherNCA0, ap0, otherCL0, otherDebt0, totalAssets0, trueEquity0, operatingStartYear};
   return MODEL;
 }
 
@@ -1086,8 +1131,9 @@ function compute(){
   renderBSWithYear0(m, [
     {section:LB('الأصول غير المتداولة','Non-Current Assets')},
     {label:LB('صافي الأصول الثابتة','Net Fixed Assets'), y0:m.ppe0, values:m.years.map(y=>y.ppeClose)},
+    {label:LB('مشروعات تحت التنفيذ (تمويل بنكي + ذاتي + فوائد مرسملة)','Projects Under Development (CIP)'), y0:0, values:m.years.map(y=>y.cipClose)},
     {label:LB('أصول غير متداولة أخرى','Other Non-Current Assets'), y0:m.otherNCA0, values:m.years.map(()=>+el('otherNCA0').value||0)},
-    {label:LB('إجمالي الأصول غير المتداولة','Total Non-Current Assets'), y0:m.ppe0+m.otherNCA0, values:m.years.map(y=>y.ppeClose+(+el('otherNCA0').value||0))},
+    {label:LB('إجمالي الأصول غير المتداولة','Total Non-Current Assets'), y0:m.ppe0+m.otherNCA0, values:m.years.map(y=>y.ppeClose+y.cipClose+(+el('otherNCA0').value||0))},
     {section:LB('الأصول المتداولة','Current Assets')},
     {label:LB('النقدية','Cash'), y0:m.cash0, values:m.years.map(y=>y.cashClose)},
     {label:LB('عملاء ومدينون','Accounts Receivable'), y0:m.ar0, values:m.years.map(y=>y.arClose)},
@@ -1104,7 +1150,7 @@ function compute(){
     {label:LB('القرض طويل الأجل (الجزء غير المتداول)','Long-Term Debt (Non-Current Portion)'), y0:m.otherDebt0, values:m.years.map(y=>y.ltdNonCurrent+y.totalDebt-y.facilityBal)},
     {section:LB('حقوق الملكية','Shareholders Equity')},
     {label:LB('رأس المال المدفوع (سنة الأساس)','Paid-in Capital (Base Year)'), y0:m.trueEquity0, values:m.years.map(y=>y.equity0)},
-    {label:LB('+ تمويل ذاتي جديد يُحقن خلال الإنشاء','+ New Equity Injected During Construction'), y0:0, values:m.years.map(()=> m.years[0].equity0-m.trueEquity0)},
+    {label:LB('+ تمويل ذاتي متراكم مُحقن خلال الإنشاء','+ Cumulative Equity Injected During Construction'), y0:0, values:(function(){ let cum=0; return m.years.map(y=>{ if(y.isConstruction) cum += (y.equityClose-y.equityOpen-(y.netIncome-y.dividends)); return cum; }); })()},
     {label:LB('أرباح محتجزة','Retained Earnings'), y0:0, values:m.years.map(y=>y.equityClose-y.equity0)},
     {label:LB('إجمالي حقوق الملكية','Total Shareholders Equity'), y0:m.trueEquity0, values:m.years.map(y=>y.equityClose)},
     {label:LB('إجمالي الخصوم وحقوق الملكية','Total Liabilities & Equity'), total:true, y0:m.totalAssets0, values:m.years.map(y=>y.totalLiabEq)},
@@ -1119,6 +1165,8 @@ function compute(){
     {section:LB('استثمارية','Investing')},
     {label:LB('إنفاق رأسمالي','Capital Expenditure'), values:m.years.map(y=>-y.capex)},
     {section:LB('تمويلية','Financing')},
+    {label:LB('سحب التمويل البنكي (فترة الإنشاء)','Bank Debt Drawdown (Construction)'), values:m.years.map(y=>y.debtDraw)},
+    {label:LB('تمويل ذاتي مُحقن (فترة الإنشاء)','Equity Injected (Construction)'), values:m.years.map(y=>y.isConstruction? (y.cff-y.debtDraw+y.dividends) : 0)},
     {label:LB('سداد أصل القرض','Debt Principal Repayment'), values:m.years.map(y=>-y.debtRepay)},
     {label:LB('توزيعات أرباح','Dividends'), values:m.years.map(y=>-y.dividends)},
     {label:LB('صافي التدفق التمويلي','Net Financing Cash Flow'), total:true, values:m.years.map(y=>y.cff)},
@@ -1494,17 +1542,18 @@ function renderUSALI(m){
   el('usaliNotHotelNote').style.display = isHotel? 'none':'block';
   if(!isHotel || !hotelUSALIDetail.length) return;
 
-  const N = m.N;
+  const operatingYears = m.years.filter(y=>!y.isConstruction);
+  const opN = hotelUSALIDetail.length;
   const totalRevAll = hotelUSALIDetail.reduce((a,d)=>a+d.totalRev,0);
   const totalNOIAll = hotelUSALIDetail.reduce((a,d)=>a+d.noi,0);
-  const avgGopMargin = hotelUSALIDetail.reduce((a,d)=>a+d.gopMargin,0)/N;
-  const avgNoiMargin = hotelUSALIDetail.reduce((a,d)=>a+d.noiMargin,0)/N;
+  const avgGopMargin = hotelUSALIDetail.reduce((a,d)=>a+d.gopMargin,0)/(opN||1);
+  const avgNoiMargin = hotelUSALIDetail.reduce((a,d)=>a+d.noiMargin,0)/(opN||1);
 
   el('usaliKpi').innerHTML = `
-    <div class="kpi-pro c-brass"><div class="label">${LANG==='en'?`Total Revenue (${N}Y)`:`إجمالي الإيرادات (${N} سنوات)`}</div><div class="value mono">${fmt(totalRevAll)}</div></div>
+    <div class="kpi-pro c-brass"><div class="label">${LANG==='en'?`Total Revenue (${opN}Y Operating)`:`إجمالي الإيرادات (${opN} سنة تشغيل)`}</div><div class="value mono">${fmt(totalRevAll)}</div></div>
     <div class="kpi-pro c-ink"><div class="label">${LANG==='en'?'Avg GOP Margin':'متوسط هامش GOP'}</div><div class="value mono">${pct(avgGopMargin*100)}</div></div>
     <div class="kpi-pro c-positive"><div class="label">${LANG==='en'?'Avg EBITDA (NOI) Margin':'متوسط هامش EBITDA (NOI)'}</div><div class="value mono">${pct(avgNoiMargin*100)}</div></div>
-    <div class="kpi-pro"><div class="label">${LANG==='en'?`Total EBITDA (${N}Y)`:`إجمالي EBITDA (${N} سنوات)`}</div><div class="value mono">${fmt(totalNOIAll)}</div></div>
+    <div class="kpi-pro"><div class="label">${LANG==='en'?`Total EBITDA (${opN}Y)`:`إجمالي EBITDA (${opN} سنة)`}</div><div class="value mono">${fmt(totalNOIAll)}</div></div>
   `;
 
   const rows = [
@@ -1535,16 +1584,16 @@ function renderUSALI(m){
     {label:LB('EBITDA (صافي الدخل التشغيلي — NOI)','EBITDA (Net Operating Income — NOI)'), total:true, values:hotelUSALIDetail.map(d=>fmt(d.noi))},
     {label:LB('هامش EBITDA','EBITDA Margin'), values:hotelUSALIDetail.map(d=>pct(d.noiMargin*100))},
     {section:LB('من EBITDA إلى صافي الربح (على مستوى الشركة)','From EBITDA to Net Profit (Company Level)')},
-    {label:LB('إهلاك','Depreciation'), values:m.years.map(y=>fmt(-y.depreciation))},
-    {label:LB('مصروف الفوائد','Interest Expense'), values:m.years.map(y=>fmt(-y.interest))},
-    {label:LB('الربح قبل الضريبة','Earnings Before Tax'), values:m.years.map(y=>fmt(y.ebt))},
-    {label:LB('الضريبة','Income Tax'), values:m.years.map(y=>fmt(-y.tax))},
-    {label:LB('صافي الربح','Net Profit'), total:true, values:m.years.map(y=>fmt(y.netIncome))},
+    {label:LB('إهلاك','Depreciation'), values:operatingYears.map(y=>fmt(-y.depreciation))},
+    {label:LB('مصروف الفوائد','Interest Expense'), values:operatingYears.map(y=>fmt(-y.interest))},
+    {label:LB('الربح قبل الضريبة','Earnings Before Tax'), values:operatingYears.map(y=>fmt(y.ebt))},
+    {label:LB('الضريبة','Income Tax'), values:operatingYears.map(y=>fmt(-y.tax))},
+    {label:LB('صافي الربح','Net Profit'), total:true, values:operatingYears.map(y=>fmt(y.netIncome))},
   ];
 
-  let html = `<tr><th>${LANG==='en'?'Item':'البند'}</th>`+m.years.map(y=>`<th>Y${yearLabel(y.t)}</th>`).join('')+`</tr>`;
+  let html = `<tr><th>${LANG==='en'?'Item':'البند'}</th>`+operatingYears.map(y=>`<th>Y${yearLabel(y.t)}</th>`).join('')+`</tr>`;
   rows.forEach(r=>{
-    if(r.section){ html += `<tr class="section"><td colspan="${N+1}">${RS(r.section)}</td></tr>`; return; }
+    if(r.section){ html += `<tr class="section"><td colspan="${opN+1}">${RS(r.section)}</td></tr>`; return; }
     html += `<tr class="${r.total?'total':''}"><td>${RS(r.label)}</td>`+r.values.map(v=>`<td>${v}</td>`).join('')+`</tr>`;
   });
   el('usaliTable').innerHTML = html;
