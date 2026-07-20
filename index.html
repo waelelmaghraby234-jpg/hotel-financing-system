@@ -841,9 +841,12 @@ function computeLoanFullSchedule(){
 }
 
 function renderRepayTable(){
-  let html = `<tr><th>#</th><th>سنة المشروع</th><th>% السداد</th></tr>`;
-  periods.forEach((p,i)=>{
-    html += `<tr><td>${i+1}</td><td>—</td><td><input class="cell" type="number" step="0.5" value="${(p.repay_pct*100).toFixed(2)}" data-idx="${i}" onchange="updateRepayPct(this)"></td></tr>`;
+  const sched = computeLoanFullSchedule();
+  let html = `<tr><th>#</th><th>سنة المشروع</th><th>% السداد (قابل للتعديل)</th><th>الرصيد الافتتاحي</th><th>سداد أصل (قسط)</th><th>فائدة</th><th>إجمالي القسط</th><th>الرصيد الختامي</th></tr>`;
+  sched.rows.forEach((r,i)=>{
+    html += `<tr><td>${i+1}</td><td>Y${yearLabel(r.projYear)}</td>
+      <td><input class="cell" type="number" step="0.5" value="${(periods[i]? periods[i].repay_pct*100:0).toFixed(2)}" data-idx="${i}" onchange="updateRepayPct(this)"></td>
+      <td>${fmt(r.opening)}</td><td>${fmt(r.principalPay)}</td><td>${fmt(r.interest)}</td><td><b>${fmt(r.principalPay+r.interest)}</b></td><td>${fmt(r.closing)}</td></tr>`;
   });
   el('repayTable').innerHTML = html;
 }
@@ -1112,6 +1115,7 @@ function compute(){
   renderCapexIDC();
   const m = computeModel(); const N=m.N;
   renderTranches();
+  renderRepayTable();
 
   renderStmt('isTable', [
     {section:LB('إيرادات الشركة المالكة','Owning Company Revenue')},
@@ -1186,26 +1190,29 @@ function compute(){
 
   // Credit
   const creditRows = m.years.map(y=>{
+    if(y.isConstruction){
+      return {t:y.t, isConstruction:true, leverage:NaN, coverage:NaN, currentRatio:NaN, dscr:NaN, composite:null, grade:'—'};
+    }
     const leverage=y.totalDebt/(y.ebitda||1), coverage=y.ebitda/(y.interest||1);
     const currentRatio=(y.cashClose+y.arClose+y.invClose+(+el('otherCA0').value||0))/((y.apClose+(+el('otherCL0').value||0))||1);
-    const ebitdaMargin=y.ebitda/(y.revenue||1), roe=y.netIncome/(y.equityClose||1);
+    const ebitdaMargin=y.revenue>0? y.ebitda/y.revenue : 0, roe=y.netIncome/(y.equityClose||1);
     const dscr=y.ebitda/((y.interest+y.debtRepay)||1);
     const r=ratingFor(leverage,coverage,currentRatio,ebitdaMargin,roe);
-    return {t:y.t, leverage, coverage, currentRatio, dscr, composite:r.composite, grade:r.band.grade};
+    return {t:y.t, isConstruction:false, leverage, coverage, currentRatio, dscr, composite:r.composite, grade:r.band.grade};
   });
   let credHtml=`<tr><th>${LANG==='en'?'Item':'البند'}</th>`+creditRows.map(r=>`<th>Y${yearLabel(r.t)}</th>`).join('')+`</tr>`;
   credHtml+=`<tr><td>${LANG==='en'?'Leverage (Debt/EBITDA)':'الرافعة (الدين/EBITDA)'}</td>`+creditRows.map(r=>`<td>${x(r.leverage)}</td>`).join('')+`</tr>`;
   credHtml+=`<tr><td>${LANG==='en'?'Interest Coverage':'تغطية الفوائد'}</td>`+creditRows.map(r=>`<td>${x(r.coverage)}</td>`).join('')+`</tr>`;
   credHtml+=`<tr><td>DSCR</td>`+creditRows.map(r=>`<td>${x(r.dscr)}</td>`).join('')+`</tr>`;
   credHtml+=`<tr><td>${LANG==='en'?'Current Ratio':'النسبة الجارية'}</td>`+creditRows.map(r=>`<td>${x(r.currentRatio)}</td>`).join('')+`</tr>`;
-  credHtml+=`<tr class="total"><td>${LANG==='en'?'Composite Score':'الدرجة المركبة'}</td>`+creditRows.map(r=>`<td>${r.composite.toFixed(0)}</td>`).join('')+`</tr>`;
+  credHtml+=`<tr class="total"><td>${LANG==='en'?'Composite Score':'الدرجة المركبة'}</td>`+creditRows.map(r=>`<td>${r.composite!=null?r.composite.toFixed(0):'—'}</td>`).join('')+`</tr>`;
   credHtml+=`<tr class="total"><td>${LANG==='en'?'Rating':'التصنيف'}</td>`+creditRows.map(r=>`<td>${r.grade}</td>`).join('')+`</tr>`;
   el('creditTable').innerHTML = credHtml;
 
   let covHtml=`<tr><th>${LANG==='en'?'Covenant':'التعهد'}</th>`+creditRows.map(r=>`<th>Y${yearLabel(r.t)}</th>`).join('')+`</tr>`;
-  covHtml+=`<tr><td>${LANG==='en'?'Leverage ≤ 4.5x':'الرافعة ≤ 4.5x'}</td>`+creditRows.map(r=>`<td><span class="pill ${r.leverage<=4.5?'ok':'bad'}">${r.leverage<=4.5?'PASS':'BREACH'}</span></td>`).join('')+`</tr>`;
-  covHtml+=`<tr><td>${LANG==='en'?'Interest Coverage ≥ 2.0x':'تغطية الفوائد ≥ 2.0x'}</td>`+creditRows.map(r=>`<td><span class="pill ${r.coverage>=2?'ok':'bad'}">${r.coverage>=2?'PASS':'BREACH'}</span></td>`).join('')+`</tr>`;
-  covHtml+=`<tr><td>DSCR ≥ 1.15x</td>`+creditRows.map(r=>`<td><span class="pill ${r.dscr>=1.15?'ok':'bad'}">${r.dscr>=1.15?'PASS':'BREACH'}</span></td>`).join('')+`</tr>`;
+  covHtml+=`<tr><td>${LANG==='en'?'Leverage ≤ 4.5x':'الرافعة ≤ 4.5x'}</td>`+creditRows.map(r=>r.isConstruction?`<td>—</td>`:`<td><span class="pill ${r.leverage<=4.5?'ok':'bad'}">${r.leverage<=4.5?'PASS':'BREACH'}</span></td>`).join('')+`</tr>`;
+  covHtml+=`<tr><td>${LANG==='en'?'Interest Coverage ≥ 2.0x':'تغطية الفوائد ≥ 2.0x'}</td>`+creditRows.map(r=>r.isConstruction?`<td>—</td>`:`<td><span class="pill ${r.coverage>=2?'ok':'bad'}">${r.coverage>=2?'PASS':'BREACH'}</span></td>`).join('')+`</tr>`;
+  covHtml+=`<tr><td>DSCR ≥ 1.15x</td>`+creditRows.map(r=>r.isConstruction?`<td>—</td>`:`<td><span class="pill ${r.dscr>=1.15?'ok':'bad'}">${r.dscr>=1.15?'PASS':'BREACH'}</span></td>`).join('')+`</tr>`;
   el('covTable').innerHTML = covHtml;
 
 
@@ -1289,13 +1296,18 @@ function scoreOf(value, higherIsBetter, good, bad){
   return Math.max(0, Math.min(100, t*100));
 }
 function renderScorecard(m, creditRows){
-  const dscrs = creditRows.map(r=>r.dscr).filter(v=>isFinite(v));
+  const opCreditRows = creditRows.filter(r=>!r.isConstruction);
+  const firstOpYear = m.years.find(y=>!y.isConstruction) || m.years[0];
+  const firstOpCreditRow = opCreditRows[0] || creditRows[0];
+
+  const dscrs = opCreditRows.map(r=>r.dscr).filter(v=>isFinite(v));
   const dscrAvg = dscrs.reduce((a,b)=>a+b,0)/(dscrs.length||1);
-  const dscrMin = Math.min(...dscrs);
-  const ebitdaMargins = m.years.map(y=>y.ebitda/(y.revenue||1));
+  const dscrMin = dscrs.length? Math.min(...dscrs) : NaN;
+  const opYears = m.years.filter(y=>!y.isConstruction);
+  const ebitdaMargins = opYears.filter(y=>y.revenue>0).map(y=>y.ebitda/y.revenue);
   const ebitdaMarginAvg = ebitdaMargins.reduce((a,b)=>a+b,0)/(ebitdaMargins.length||1);
-  const ltvY1 = m.years[0].facilityBal/(m.ev||1);
-  const leverageY1 = creditRows[0].leverage;
+  const ltvY1 = firstOpYear.facilityBal/(m.ev||1);
+  const leverageY1 = firstOpCreditRow.leverage;
   const equity0 = m.years[0].equityOpen;
   const equityCF = [-equity0, ...m.years.map((y,i)=> i===m.N-1 ? y.dividends+m.equityValue : y.dividends)];
   const eqIRR = irr(equityCF);
@@ -1384,12 +1396,14 @@ function computeStressScenario(){
   hotelUSALIDetail = savedUSALIDetail;
 
   if(!stressedModel) return null;
-  const dscrs = stressedModel.years.map(y=> y.ebitda/((y.interest+y.debtRepay)||1)).filter(v=>isFinite(v));
-  const minDSCR = Math.min(...dscrs);
-  const leverageY1 = stressedModel.years[0].totalDebt/(stressedModel.years[0].ebitda||1);
-  const ebitdaMargins = stressedModel.years.map(y=>y.ebitda/(y.revenue||1));
+  const stressedOpYears = stressedModel.years.filter(y=>!y.isConstruction);
+  const firstStressedOpYear = stressedOpYears[0] || stressedModel.years[0];
+  const dscrs = stressedOpYears.map(y=> y.ebitda/((y.interest+y.debtRepay)||1)).filter(v=>isFinite(v));
+  const minDSCR = dscrs.length? Math.min(...dscrs) : NaN;
+  const leverageY1 = firstStressedOpYear.totalDebt/(firstStressedOpYear.ebitda||1);
+  const ebitdaMargins = stressedOpYears.filter(y=>y.revenue>0).map(y=>y.ebitda/y.revenue);
   const ebitdaMarginAvg = ebitdaMargins.reduce((a,b)=>a+b,0)/(ebitdaMargins.length||1);
-  const ltv = stressedModel.years[0].facilityBal/(stressedModel.ev||1);
+  const ltv = firstStressedOpYear.facilityBal/(stressedModel.ev||1);
   const sLev = scoreOf(leverageY1,false,9,3), sDscr = scoreOf(minDSCR,true,2.0,1.0);
   const sMar = scoreOf(ebitdaMarginAvg,true,0.45,0.20), sLtv = scoreOf(ltv,false,0.85,0.55);
   const composite = sDscr*0.35+sLev*0.30+sMar*0.20+sLtv*0.15;
@@ -1505,7 +1519,7 @@ function renderDashboard(m, creditRows){
   const rows = [
     {label:LB('الإيرادات','Revenue'), values:m.years.map(y=>fmt(y.revenue))},
     {label:LB('EBITDA','EBITDA'), values:m.years.map(y=>fmt(y.ebitda))},
-    {label:LB('هامش EBITDA','EBITDA Margin'), values:m.years.map(y=>pct(y.ebitda/(y.revenue||1)*100))},
+    {label:LB('هامش EBITDA','EBITDA Margin'), values:m.years.map(y=>y.revenue>0? pct(y.ebitda/y.revenue*100) : '—')},
     {label:LB('صافي الربح','Net Profit'), values:m.years.map(y=>fmt(y.netIncome))},
     {label:LB('خدمة الدين','Debt Service'), values:m.years.map(y=>fmt(y.interest+y.debtRepay))},
     {label:LB('DSCR','DSCR'), values:creditRows.map(r=>x(r.dscr))},
@@ -1519,14 +1533,15 @@ function renderDashboard(m, creditRows){
 
 // ---------------- Covenant cards (Year 1) ----------------
 function renderCovCards(m, creditRows){
-  const yl = el('covCardsYearLabel'); if(yl) yl.textContent = `${LANG==='en'?'Covenant Check':'فحص التعهدات'} — Y${yearLabel(1)}`;
-  const y1 = creditRows[0];
+  const firstOpYear = m.years.find(y=>!y.isConstruction) || m.years[0];
+  const y1 = creditRows.find(r=>!r.isConstruction) || creditRows[0];
+  const yl = el('covCardsYearLabel'); if(yl) yl.textContent = `${LANG==='en'?'Covenant Check':'فحص التعهدات'} — Y${yearLabel(firstOpYear.t)} (${LANG==='en'?'first operating year':'أول سنة تشغيل'})`;
   const cards = [
     {name:LB('DSCR (الحد الأدنى)','DSCR (Minimum)'), val:x(y1.dscr), ok:y1.dscr>=1.20, target:'≥ 1.20x'},
-    {name:LB('LTV (نسبة القرض لقيمة الاستثمار)','LTV (Loan-to-Value)'), val:pct(m.years[0].facilityBal/(m.ev||1)*100), ok:(m.years[0].facilityBal/(m.ev||1))<=0.75, target:'≤ 75.0%'},
-    {name:LB('هامش EBITDA','EBITDA Margin'), val:pct(m.years[0].ebitda/(m.years[0].revenue||1)*100), ok:(m.years[0].ebitda/(m.years[0].revenue||1))>=0.28, target:'≥ 28.0%'},
+    {name:LB('LTV (نسبة القرض لقيمة الاستثمار)','LTV (Loan-to-Value)'), val:pct(firstOpYear.facilityBal/(m.ev||1)*100), ok:(firstOpYear.facilityBal/(m.ev||1))<=0.75, target:'≤ 75.0%'},
+    {name:LB('هامش EBITDA','EBITDA Margin'), val:firstOpYear.revenue>0?pct(firstOpYear.ebitda/firstOpYear.revenue*100):'—', ok:firstOpYear.revenue>0 && (firstOpYear.ebitda/firstOpYear.revenue)>=0.28, target:'≥ 28.0%'},
     {name:LB('الرافعة Debt/EBITDA','Leverage Debt/EBITDA'), val:x(y1.leverage), ok:y1.leverage<=6.0, target:'≤ 6.00x'},
-    {name:LB('Debt Yield (EBITDA/الدين)','Debt Yield (EBITDA/Debt)'), val:pct(m.years[0].ebitda/(m.principal||1)*100), ok:(m.years[0].ebitda/(m.principal||1))>=0.10, target:'≥ 10.0%'},
+    {name:LB('Debt Yield (EBITDA/الدين)','Debt Yield (EBITDA/Debt)'), val:pct(firstOpYear.ebitda/(m.principal||1)*100), ok:(firstOpYear.ebitda/(m.principal||1))>=0.10, target:'≥ 10.0%'},
   ];
   el('covCards').innerHTML = cards.map(c=>`
     <div class="cov-card ${c.ok?'pass':'fail'}">
@@ -2013,10 +2028,11 @@ function exportToExcel(){
 
   const creditAoa = [['Credit & Bank Metrics'], ['Year','Leverage(x)','Coverage(x)','DSCR(x)','Current Ratio(x)','Rating']];
   const creditRowsExp = m.years.map(y=>{
+    if(y.isConstruction) return [y.t, '—','—','—','—','Construction'];
     const leverage=y.totalDebt/(y.ebitda||1), coverage=y.ebitda/(y.interest||1);
     const dscr=y.ebitda/((y.interest+y.debtRepay)||1);
     const currentRatio=(y.cashClose+y.arClose+y.invClose)/((y.apClose)||1);
-    const r=ratingFor(leverage,coverage,currentRatio, y.ebitda/(y.revenue||1), y.netIncome/(y.equityClose||1));
+    const r=ratingFor(leverage,coverage,currentRatio, y.revenue>0?y.ebitda/y.revenue:0, y.netIncome/(y.equityClose||1));
     return [y.t, leverage.toFixed(2), coverage.toFixed(2), dscr.toFixed(2), currentRatio.toFixed(2), r.band.grade];
   });
   creditRowsExp.forEach(r=>creditAoa.push(r));
