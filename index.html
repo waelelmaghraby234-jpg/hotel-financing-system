@@ -416,7 +416,7 @@
   <!-- ============ TAB 3 : STATEMENTS ============ -->
   <div class="tab-panel" id="t3">
     <div class="panel"><div class="panel-head"><span>قائمة الدخل</span><span>Income Statement</span></div><div class="panel-body stmt-scroll"><table class="stmt" id="isTable"></table></div></div>
-    <div class="panel"><div class="panel-head"><span>الميزانية العمومية</span><span>Balance Sheet</span></div><div class="panel-body stmt-scroll"><table class="stmt" id="bsTable"></table></div></div>
+    <div class="panel"><div class="panel-head"><span>الميزانية العمومية</span><span>Balance Sheet</span></div><div class="panel-body stmt-scroll"><table class="stmt" id="bsTable"></table><div id="equity0MismatchNote"></div></div></div>
     <div class="panel"><div class="panel-head"><span>التدفقات النقدية</span><span>Cash Flow</span></div><div class="panel-body stmt-scroll"><table class="stmt" id="cfTable"></table></div></div>
   </div>
 
@@ -970,7 +970,9 @@ function computeModel(){
   const otherDebt0=+el('otherDebt0').value||0;
   let equity0In=+el('equity0').value||0;
   const totalAssets0=cash0+ar0+inv0+otherCA0+ppe0+otherNCA0;
-  const trueEquity0 = equity0In>0 ? equity0In : totalAssets0-(ap0+otherCL0+otherDebt0);
+  const balancedEquity0 = totalAssets0-(ap0+otherCL0+otherDebt0);
+  const trueEquity0 = balancedEquity0; // دائمًا نُرجّح التوازن المحاسبي؛ أي فرق عن رقمك المُدخل يُعرض كتنبيه بدل ما يتراكم في كل السنين
+  const equity0Mismatch = equity0In>0 ? (equity0In-balancedEquity0) : 0;
 
   const loanSched = computeLoanFullSchedule();
   const annualLoan = {};
@@ -1048,15 +1050,18 @@ function computeModel(){
     let cff;
     if(isConstruction){ cff = constr.debtDrawn+constr.equityInjected-dividends; }
     else { cff = -debtRepay-dividends; }
-    const netCF = cfo+cfi+cff;
-    const cashClose = cashOpen+netCF;
-    const equityClose = equityOpen+netIncome-dividends+(isConstruction? constr.equityInjected:0);
+    let netCF = cfo+cfi+cff;
+    let cashClose = cashOpen+netCF;
+    // دعم ذاتي تلقائي من المالك: أي عجز نقدي (سواء مصاريف فترة الإنشاء أو خسائر تشغيل مبكرة) يُغطّى بتمويل ذاتي إضافي بدل ما تظهر النقدية بالسالب
+    const equitySupport = cashClose<0 ? -cashClose : 0;
+    if(equitySupport>0){ cff += equitySupport; netCF += equitySupport; cashClose += equitySupport; }
+    const equityClose = equityOpen+netIncome-dividends+(isConstruction? constr.equityInjected:0)+equitySupport;
     const facilityBal = facilityDebtClose;
     const totalDebt = otherDebt0+facilityBal;
     const totalAssets = cashClose+arClose+invClose+otherCA0+ppeClose+otherNCA0+cipClose;
     const totalLiabEq = apClose+otherCL0+totalDebt+equityClose;
 
-    years.push({t, isConstruction, revenue:rev, hotelNOI, otherRevenue, companyGA, totalCompanyRevenue, ebitda:ebd, depreciation, ebit, interest, ebt, tax, netIncome, capex, ppeOpen, ppeClose, cipOpen, cipClose,
+    years.push({t, isConstruction, revenue:rev, hotelNOI, otherRevenue, companyGA, totalCompanyRevenue, ebitda:ebd, depreciation, ebit, interest, ebt, tax, netIncome, capex, ppeOpen, ppeClose, cipOpen, cipClose, equitySupport,
       arOpen, arClose, invOpen, invClose, apOpen, apClose, dWC, dividends, cfo, cfi, cff, netCF, cashOpen, cashClose,
       equityOpen, equityClose, equity0: trueEquity0, facilityBal, totalDebt, totalAssets, totalLiabEq, checkDiff: totalAssets-totalLiabEq, debtRepay, debtDraw});
     ppeOpen=ppeClose; cipOpen=cipClose; facilityDebtOpen=facilityDebtClose; cashOpen=cashClose; arOpen=arClose; invOpen=invClose; apOpen=apClose; equityOpen=equityClose;
@@ -1082,7 +1087,7 @@ function computeModel(){
 
   MODEL = {N, years, loanSched, annualLoan, totalFacilityYears, wacc, costEquity, costDebtAT, we, wd, fcf, pvFcf, tv, pvTv, ev, equityValue, netDebt0, taxRate,
     dealName: el('dealName').value, activityType: el('activityType').value, principal: loanSched.principal, allInRate: loanSched.rate,
-    cash0, ar0, inv0, otherCA0, ppe0, otherNCA0, ap0, otherCL0, otherDebt0, totalAssets0, trueEquity0, operatingStartYear};
+    cash0, ar0, inv0, otherCA0, ppe0, otherNCA0, ap0, otherCL0, otherDebt0, totalAssets0, trueEquity0, operatingStartYear, equity0Mismatch};
   return MODEL;
 }
 
@@ -1119,6 +1124,12 @@ function renderBSWithYear0(m, rows){
 function compute(){
   renderCapexIDC();
   const m = computeModel(); const N=m.N;
+  const mismatchNote = el('equity0MismatchNote');
+  if(Math.abs(m.equity0Mismatch)>1){
+    mismatchNote.innerHTML = `<div class="note" style="margin-top:10px;border-inline-start-color:var(--negative);">⚠ ${LANG==='en'?'The equity value you entered manually differs by':'قيمة حقوق الملكية اللي دخّلتها يدويًا مختلفة بمقدار'} <b class="mono">${fmt(Math.abs(m.equity0Mismatch))}</b> ${LANG==='en'?'from the amount required to balance your other Year-0 figures. The system uses the balanced figure automatically so the balance sheet stays correct every year — please review your real accounts (e.g. other assets/liabilities categories not captured here) to reconcile this gap.':'عن القيمة المطلوبة لتوازن باقي أرقام سنة الأساس. النظام بيستخدم القيمة المتوازنة تلقائيًا عشان الميزانية تفضل صح في كل سنة — راجع حساباتك الحقيقية (زي بنود أصول/خصوم تانية مش موجودة في النظام) عشان تقفل الفرق ده.'}</div>`;
+  } else {
+    mismatchNote.innerHTML = '';
+  }
   renderTranches();
   renderRepayTable();
 
@@ -1175,7 +1186,8 @@ function compute(){
     {label:LB('إنفاق رأسمالي','Capital Expenditure'), values:m.years.map(y=>-y.capex)},
     {section:LB('تمويلية','Financing')},
     {label:LB('سحب التمويل البنكي (فترة الإنشاء)','Bank Debt Drawdown (Construction)'), values:m.years.map(y=>y.debtDraw)},
-    {label:LB('تمويل ذاتي مُحقن (فترة الإنشاء)','Equity Injected (Construction)'), values:m.years.map(y=>y.isConstruction? (y.cff-y.debtDraw+y.dividends) : 0)},
+    {label:LB('تمويل ذاتي أساسي مُحقن (فترة الإنشاء — Pari-Passu)','Base Equity Injected (Construction — Pari-Passu)'), values:m.years.map(y=>y.isConstruction? (y.cff-y.debtDraw+y.dividends-y.equitySupport) : 0)},
+    {label:LB('دعم ذاتي إضافي (لتغطية أي عجز نقدي)','Additional Equity Support (Cash Shortfall Coverage)'), values:m.years.map(y=>y.equitySupport)},
     {label:LB('سداد أصل القرض','Debt Principal Repayment'), values:m.years.map(y=>-y.debtRepay)},
     {label:LB('توزيعات أرباح','Dividends'), values:m.years.map(y=>-y.dividends)},
     {label:LB('صافي التدفق التمويلي','Net Financing Cash Flow'), total:true, values:m.years.map(y=>y.cff)},
