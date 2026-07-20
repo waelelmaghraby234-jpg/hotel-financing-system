@@ -197,7 +197,7 @@
       </div>
     </div>
 
-    <div class="panel"><div class="panel-head"><span>مقارنة السوق — فنادق مرجعية في نفس المنطقة</span><span>Market Benchmark</span></div>
+    <div class="panel"><div class="panel-head"><span>مقارنة السوق (منهجية STR/MENA) — فنادق مرجعية في نفس المنطقة</span><span>Market Benchmark (STR/MENA)</span></div>
       <div class="panel-body">
         <table class="stmt" id="marketBenchTable"></table>
         <div style="font-size:11px;color:var(--ink-500);margin-top:8px;" id="marketBenchSource"></div>
@@ -274,7 +274,8 @@
             <div class="field"><label>أيام المخزون</label><input id="invDays" type="number" value="15"></div>
             <div class="field"><label>أيام سداد الموردين</label><input id="apDays" type="number" value="35"></div>
           </div>
-          <div class="field"><label>نسبة توزيع الأرباح %</label><input id="divPayout" type="number" value="0"></div>
+          <div class="field"><label>نسبة توزيع الأرباح % (بعد سداد التمويل بالكامل فقط)</label><input id="divPayout" type="number" value="0"></div>
+          <div class="note" style="margin-top:0;margin-bottom:14px;">🔒 شرط بنكي قياسي مُفعّل تلقائيًا: النظام بيمنع أي توزيعات أرباح للمساهمين طول فترة الإنشاء وطول ما رصيد التمويل قائم — التوزيع بيبقى ممكن بس بعد سداد القرض بالكامل.</div>
 
           <div class="sect">إيرادات ومصروفات الشركة المالكة (خارج الفندق)</div>
           <div class="row2">
@@ -1029,20 +1030,24 @@ function computeModel(){
 
     const arClose = rev*(arDays/365), invClose = ebd>0? (rev-ebd)*(invDays/365) : Math.max(0,rev)*0.1*(invDays/365), apClose = Math.max(0,rev-ebd)*(apDays/365);
     const dWC = (arClose-arOpen)+(invClose-invOpen)-(apClose-apOpen);
-    const dividends = Math.max(0,netIncome)*divPayout;
-    const cfo = netIncome+depreciation-dWC;
+    const cfo0 = netIncome+depreciation-dWC;
     const cfi = -capex;
 
-    let debtDraw, debtRepay, cff, facilityDebtClose;
+    let debtDraw, debtRepay, facilityDebtClose;
     if(isConstruction){
       debtDraw = constr.debtDrawn; debtRepay = 0;
-      cff = constr.debtDrawn+constr.equityInjected-dividends;
       facilityDebtClose = facilityDebtOpen+constr.debtDrawn+constr.idcAdded;
     } else {
       debtDraw = 0; debtRepay = la.principal;
-      cff = -debtRepay-dividends;
       facilityDebtClose = la.closing!=null ? la.closing : facilityDebtOpen;
     }
+    // شرط بنكي قياسي: ممنوع توزيع أي أرباح على المساهمين طالما التمويل قائم (لسه مسدّدش بالكامل) أو أثناء الإنشاء
+    const loanFullyRepaid = facilityDebtClose<=1;
+    const dividends = (!isConstruction && loanFullyRepaid) ? Math.max(0,netIncome)*divPayout : 0;
+    const cfo = cfo0;
+    let cff;
+    if(isConstruction){ cff = constr.debtDrawn+constr.equityInjected-dividends; }
+    else { cff = -debtRepay-dividends; }
     const netCF = cfo+cfi+cff;
     const cashClose = cashOpen+netCF;
     const equityClose = equityOpen+netIncome-dividends+(isConstruction? constr.equityInjected:0);
@@ -1448,21 +1453,27 @@ function renderMarketBenchmark(m){
   const y1Occ = hotelUSALIDetail[0].occ;
   const stabilizedADR = hotelUSALIDetail[lastIdx].adr;
   const stabilizedRevPAR = hotelUSALIDetail[lastIdx].revPAR;
+  const revparGrowthImplied = hotelUSALIDetail.length>1 ? (hotelUSALIDetail[lastIdx].revPAR/hotelUSALIDetail[0].revPAR-1) : 0;
 
-  const bench = { occLow:0.70, occHigh:0.82, occTypical:0.78, revparUSDLow:55, revparUSDHigh:75 };
+  const bench = { occLow:0.70, occHigh:0.82, occTypical:0.78, revparUSDLow:55, revparUSDHigh:75, revparGrowthLow:0.15, revparGrowthHigh:0.45 };
   const rows = [
     {label:LB('الإشغال عند النضج (آخر سنة)','Occupancy at Stabilization (last year)'), val:pct(stabilizedOcc*100), range:`${pct(bench.occLow*100)} – ${pct(bench.occHigh*100)}`, ok: stabilizedOcc>=bench.occLow && stabilizedOcc<=bench.occHigh+0.05},
     {label:LB('RevPAR عند النضج','RevPAR at Stabilization'), val:fmt(stabilizedRevPAR), range:`$${bench.revparUSDLow} – $${bench.revparUSDHigh}`, ok: stabilizedRevPAR>=bench.revparUSDLow*0.8},
     {label:LB('ADR عند النضج','ADR at Stabilization'), val:fmt(stabilizedADR), range: LANG==='en'?'Varies by positioning':'يعتمد على تموضع الفندق', ok:true},
+    {label:LB('نمو RevPAR المُفترض (كامل الأفق)','Assumed RevPAR Growth (full horizon)'), val:pct(revparGrowthImplied*100), range:`${pct(bench.revparGrowthLow*100)} – ${pct(bench.revparGrowthHigh*100)} ${LANG==='en'?'(vs STR YoY range below)':'(مقارنة بنطاق STR السنوي أدناه)'}`, ok: true},
   ];
   let html = `<tr><th>${LANG==='en'?'Metric':'المؤشر'}</th><th>${LANG==='en'?'This Project':'هذا المشروع'}</th><th>${LANG==='en'?'Market Range (Red Sea 5-star)':'نطاق السوق (فنادق 5 نجوم — البحر الأحمر)'}</th><th>${LANG==='en'?'Result':'النتيجة'}</th></tr>`;
   rows.forEach(r=>{
     html += `<tr><td>${RS(r.label)}</td><td>${r.val}</td><td>${r.range}</td><td><span class="pill ${r.ok?'ok':'bad'}">${r.ok?(LANG==='en'?'IN RANGE':'ضمن النطاق'):(LANG==='en'?'OUTLIER':'خارج النطاق')}</span></td></tr>`;
   });
+  html += `<tr><td colspan="4" style="text-align:${LANG==='en'?'left':'right'};padding-top:14px;">
+    <b>${LANG==='en'?'STR-reported YoY RevPAR growth (MEA update, March 2025 data):':'نمو RevPAR السنوي المُبلَّغ من STR (تحديث الشرق الأوسط وأفريقيا، بيانات مارس 2025):'}</b><br>
+    Sharm El Sheikh: <span class="mono">+41.2%</span> &nbsp;|&nbsp; Hurghada: <span class="mono">+34.7%</span> &nbsp;—&nbsp; ${LANG==='en'?'the two strongest-growing markets in the MEA region that period.':'أقوى سوقين نموًا في منطقة الشرق الأوسط وأفريقيا في نفس الفترة.'}
+  </td></tr>`;
   el('marketBenchTable').innerHTML = html;
-  el('marketBenchSource').textContent = LANG==='en'
-    ? 'Sources: Gitnux Egypt Tourism Statistics (Hurghada 5-star ~78% avg occupancy 2023, luxury Red Sea resorts up to 82% peak); Mohamed Taman Hurghada Tourism Market Report 2025 (branded hotel RevPAR EGP 3,203 in 2024). Figures are indicative regional benchmarks, not a formal comparable-set appraisal.'
-    : 'المصادر: Gitnux لإحصاءات السياحة المصرية (فنادق الغردقة 5 نجوم ~78% متوسط إشغال 2023، منتجعات البحر الأحمر الفاخرة حتى 82% ذروة)؛ تقرير Mohamed Taman لسوق سياحة الغردقة 2025 (RevPAR الفنادق ذات العلامات التجارية 3,203 جنيه في 2024). الأرقام مؤشرات سوقية استرشادية، مش تقييم رسمي لمجموعة مقارنة معتمدة.';
+  el('marketBenchSource').innerHTML = LANG==='en'
+    ? 'Sources: <a href="https://str.com/data-insights-blog/middle-east-africa-hotel-performance-update" target="_blank" rel="noopener">STR — Middle East &amp; Africa Hotel Performance Update</a> (Sharm El Sheikh/Hurghada RevPAR growth, March 2025 data); Gitnux Egypt Tourism Statistics (Hurghada 5-star ~78% avg occupancy 2023); Mohamed Taman Hurghada Tourism Market Report 2025 (RevPAR EGP 3,203, 2024). Figures are indicative STR/MENA regional benchmarks, not a formal comparable-set appraisal from a subscription STR/MENA Hotel Benchmark Survey report — for underwriting-grade numbers, commission a dedicated STR Trend/Comp Set report for the exact competitive set.'
+    : 'المصادر: <a href="https://str.com/data-insights-blog/middle-east-africa-hotel-performance-update" target="_blank" rel="noopener">STR — تحديث أداء فنادق الشرق الأوسط وأفريقيا</a> (نمو RevPAR شرم الشيخ/الغردقة، بيانات مارس 2025)؛ Gitnux لإحصاءات السياحة المصرية (فنادق الغردقة 5 نجوم ~78% متوسط إشغال 2023)؛ تقرير Mohamed Taman لسوق سياحة الغردقة 2025 (RevPAR 3,203 جنيه، 2024). الأرقام مؤشرات استرشادية من تقارير STR/MENA العامة، مش تقرير STR/MENA Hotel Benchmark Survey مدفوع لمجموعة منافسين محددة بالاسم — للتقديم الرسمي للبنك يُفضّل طلب تقرير STR Trend/Comp Set مخصص لمجموعة الفنادق المنافسة الفعلية.';
 }
 
 // ---------------- Assumptions Reality Check ----------------
