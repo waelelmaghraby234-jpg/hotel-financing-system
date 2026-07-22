@@ -139,33 +139,34 @@
       <button id="topLangBtn" style="background:transparent;border:1px solid #fff;font-weight:700;" onclick="toggleLang()">EN / عربي</button>
       <span class="audit-badge" id="auditBadge">AUDIT —</span>
       <button onclick="window.print()">🖨 طباعة التاب الحالي</button>
+      <button onclick="quickSave()" style="background:var(--positive);">💾 حفظ سريع</button>
       <button onclick="exportToExcel()">Export Excel ↓</button>
       <button onclick="handleLogout()" style="background:var(--negative);">خروج</button>
     </div>
   </div>
 
   <nav class="tabs no-print">
-    <button class="tab-btn active" data-tab="tscore"><span class="num">A</span><span class="lbl" data-ar="تحليل الائتمان" data-en="Credit Rating">تحليل الائتمان</span></button>
-    <button class="tab-btn" data-tab="tdash"><span class="num">B</span><span class="lbl" data-ar="Dashboard" data-en="Dashboard">Dashboard</span></button>
-    <button class="tab-btn" data-tab="t0"><span class="num">00</span><span class="lbl" data-ar="الإعداد والميزانية الافتتاحية" data-en="Setup &amp; Opening Balance">الإعداد والميزانية الافتتاحية</span></button>
-    <button class="tab-btn" data-tab="t1"><span class="num">01</span><span class="lbl" data-ar="الإيرادات" data-en="Revenue">الإيرادات</span></button>
-    <button class="tab-btn" data-tab="tusali"><span class="num">01C</span><span class="lbl" data-ar="USALI" data-en="USALI">USALI</span></button>
-    <button class="tab-btn" data-tab="tcapex"><span class="num">01B</span><span class="lbl" data-ar="التكلفة الاستثمارية وIDC" data-en="Investment Cost &amp; IDC">التكلفة الاستثمارية وIDC</span></button>
-    <button class="tab-btn" data-tab="t2"><span class="num">02</span><span class="lbl" data-ar="التمويل وجدول السداد" data-en="Financing &amp; Repayment">التمويل وجدول السداد</span></button>
-    <button class="tab-btn" data-tab="t3"><span class="num">03</span><span class="lbl" data-ar="القوائم المالية" data-en="Financial Statements">القوائم المالية</span></button>
-    <button class="tab-btn" data-tab="t4"><span class="num">04</span><span class="lbl" data-ar="التحليل الائتماني" data-en="Credit Analysis">التحليل الائتماني</span></button>
-    <button class="tab-btn" data-tab="t5"><span class="num">05</span><span class="lbl" data-ar="التقييم" data-en="Valuation">التقييم</span></button>
-    <button class="tab-btn" data-tab="t7"><span class="num">07</span><span class="lbl" data-ar="مؤشرات البنك (IRR/LLCR/LTV)" data-en="Bank Metrics (IRR/LLCR/LTV)">مؤشرات البنك (IRR/LLCR/LTV)</span></button>
-    <button class="tab-btn" data-tab="t6"><span class="num">06</span><span class="lbl" data-ar="تقرير البنك" data-en="Bank Report">تقرير البنك</span></button>
-    <button class="tab-btn" data-tab="t8"><span class="num">08</span><span class="lbl" data-ar="قاعدة البيانات" data-en="Database">قاعدة البيانات</span></button>
-    <button class="tab-btn" data-tab="tscn"><span class="num">09</span><span class="lbl" data-ar="السيناريوهات" data-en="Scenarios">السيناريوهات</span></button>
-    <button class="tab-btn" data-tab="tsens"><span class="num">10</span><span class="lbl" data-ar="تحليل الحساسية" data-en="Sensitivity">تحليل الحساسية</span></button>
-    <button class="tab-btn" data-tab="taudit"><span class="num">11</span><span class="lbl" data-ar="التدقيق" data-en="Audit">التدقيق</span></button>
+    <button class="tab-btn active" data-tab="tdash"><span class="num">00</span><span class="lbl" data-ar="نظرة عامة (Dashboard)" data-en="Dashboard">نظرة عامة (Dashboard)</span></button>
+    <button class="tab-btn" data-tab="t0"><span class="num">01</span><span class="lbl" data-ar="الإعداد والميزانية الافتتاحية" data-en="Setup &amp; Opening Balance">الإعداد والميزانية الافتتاحية</span></button>
+    <button class="tab-btn" data-tab="t1"><span class="num">02</span><span class="lbl" data-ar="الإيرادات" data-en="Revenue">الإيرادات</span></button>
+    <button class="tab-btn" data-tab="tusali"><span class="num">03</span><span class="lbl" data-ar="USALI" data-en="USALI">USALI</span></button>
+    <button class="tab-btn" data-tab="tcapex"><span class="num">04</span><span class="lbl" data-ar="التكلفة الاستثمارية وIDC" data-en="Investment Cost &amp; IDC">التكلفة الاستثمارية وIDC</span></button>
+    <button class="tab-btn" data-tab="t2"><span class="num">05</span><span class="lbl" data-ar="التمويل وجدول السداد" data-en="Financing &amp; Repayment">التمويل وجدول السداد</span></button>
+    <button class="tab-btn" data-tab="t3"><span class="num">06</span><span class="lbl" data-ar="القوائم المالية" data-en="Financial Statements">القوائم المالية</span></button>
+    <button class="tab-btn" data-tab="t4"><span class="num">07</span><span class="lbl" data-ar="الاتجاه الائتماني" data-en="Credit Trend">الاتجاه الائتماني</span></button>
+    <button class="tab-btn" data-tab="t5"><span class="num">08</span><span class="lbl" data-ar="التقييم" data-en="Valuation">التقييم</span></button>
+    <button class="tab-btn" data-tab="t7"><span class="num">09</span><span class="lbl" data-ar="مؤشرات البنك (IRR/LLCR/LTV)" data-en="Bank Metrics (IRR/LLCR/LTV)">مؤشرات البنك (IRR/LLCR/LTV)</span></button>
+    <button class="tab-btn" data-tab="tscore"><span class="num">10</span><span class="lbl" data-ar="تصنيف ائتماني ومخاطر" data-en="Credit Rating &amp; Risk">تصنيف ائتماني ومخاطر</span></button>
+    <button class="tab-btn" data-tab="tscn"><span class="num">11</span><span class="lbl" data-ar="السيناريوهات" data-en="Scenarios">السيناريوهات</span></button>
+    <button class="tab-btn" data-tab="tsens"><span class="num">12</span><span class="lbl" data-ar="تحليل الحساسية" data-en="Sensitivity">تحليل الحساسية</span></button>
+    <button class="tab-btn" data-tab="taudit"><span class="num">13</span><span class="lbl" data-ar="التدقيق" data-en="Audit">التدقيق</span></button>
+    <button class="tab-btn" data-tab="t6"><span class="num">14</span><span class="lbl" data-ar="تقرير البنك" data-en="Bank Report">تقرير البنك</span></button>
+    <button class="tab-btn" data-tab="t8"><span class="num">15</span><span class="lbl" data-ar="المحفظة" data-en="Portfolio">المحفظة</span></button>
     <button class="lang-btn no-print" id="langToggleBtn" onclick="toggleLang()">EN / عربي</button>
   </nav>
 
   <!-- ============ TAB SCORECARD ============ -->
-  <div class="tab-panel active" id="tscore">
+  <div class="tab-panel" id="tscore">
     <div class="score-grid">
       <div>
         <div class="panel"><div class="panel-head"><span>مكونات التقييم الائتماني (موزونة)</span><span>Weighted Scorecard</span></div>
@@ -210,7 +211,7 @@
   </div>
 
   <!-- ============ TAB DASHBOARD ============ -->
-  <div class="tab-panel" id="tdash">
+  <div class="tab-panel active" id="tdash">
     <div class="exec-kpi-row" id="execKpi"></div>
     <div class="panel"><div class="panel-head"><span>ملخص سنوي — 10 سنوات</span><span>Annual Summary</span></div>
       <div class="panel-body stmt-scroll"><table class="stmt" id="dashTable"></table></div>
@@ -451,6 +452,12 @@
 
   <!-- ============ TAB 8 : DATABASE ============ -->
   <div class="tab-panel" id="t8">
+    <div class="panel" style="border-color:var(--negative);"><div class="panel-head" style="background:var(--negative-soft);"><span>➕ ابدأ مشروع جديد (شركة/فندق تاني في نفس المحفظة)</span><span>Start New Project</span></div>
+      <div class="panel-body">
+        <div class="note" style="margin-bottom:14px;">محفظتك ممكن تضم أكتر من مشروع (شركات/فنادق مختلفة). لو عندك تعديلات حالية مش محفوظة، احفظها الأول (زرار "💾 حفظ سريع" فوق) قبل ما تبدأ مشروع جديد عشان متفقدهاش.</div>
+        <button class="btn no-print" style="background:var(--negative);color:#fff;" onclick="startNewProject()">➕ ابدأ مشروع جديد فارغ</button>
+      </div>
+    </div>
     <div class="panel" style="border-color:var(--brass);"><div class="panel-head" style="background:var(--brass-soft);"><span>⭐ الطريقة الموصى بيها — ملف إعدادات محمول (JSON)</span><span>Recommended: Portable Config File</span></div>
       <div class="panel-body">
         <div class="note" style="margin-bottom:14px;">دي الطريقة اللي هتشتغل معاك **من أي جهاز وأي مكان** بدون ما تعتمد على Claude خالص. بتصدّر كل مدخلاتك في ملف صغير (JSON)، وترفعه على أي حاجة تختارها (GitHub، Google Drive، إيميلك، فلاشة)، وترجع تفتحه في أي وقت على أي كمبيوتر — الملف ده هو "قاعدة البيانات" المحمولة بتاعتك.</div>
@@ -487,7 +494,7 @@
         <div id="saveStatus" style="font-size:12px;color:var(--positive);"></div>
       </div>
     </div>
-    <div class="panel"><div class="panel-head"><span>الصفقات المحفوظة (سحابيًا)</span><span>Saved Deals (Cloud)</span></div>
+    <div class="panel"><div class="panel-head"><span>مشروعات المحفظة (سحابيًا) — كل صفقة/شركة محفوظة باسمها</span><span>Portfolio Projects (Cloud)</span></div>
       <div class="panel-body" id="dealsListBody"><span style="font-size:12px;color:var(--ink-500);">جارِ التحميل...</span></div>
     </div>
 
@@ -1430,12 +1437,11 @@ function computeStressScenario(){
 
 function renderStressTest(m){
   const stressed = computeStressScenario();
-  const baseCreditRows = m.years.map(y=>{
-    const dscr = y.ebitda/((y.interest+y.debtRepay)||1);
-    return dscr;
-  });
-  const baseMinDSCR = Math.min(...baseCreditRows.filter(v=>isFinite(v)));
-  const baseLeverage = m.years[0].totalDebt/(m.years[0].ebitda||1);
+  const baseOpYears = m.years.filter(y=>!y.isConstruction);
+  const firstBaseOpYear = baseOpYears[0] || m.years[0];
+  const baseCreditRows = baseOpYears.map(y=> y.ebitda/((y.interest+y.debtRepay)||1));
+  const baseMinDSCR = baseCreditRows.length? Math.min(...baseCreditRows.filter(v=>isFinite(v))) : NaN;
+  const baseLeverage = firstBaseOpYear.totalDebt/(firstBaseOpYear.ebitda||1);
 
   if(!stressed){
     el('stressTable').innerHTML = `<tr><td>${LANG==='en'?'Stress test only available for hotel activity type.':'اختبار الضغط متاح فقط لنشاط فندقي حاليًا.'}</td></tr>`;
@@ -1689,7 +1695,8 @@ function withShadowInputs(occDeltaPts, rateDeltaPts, fn){
   return result;
 }
 function sensMetrics(m){
-  const dscrs = m.years.map(y=> y.ebitda/((y.interest+y.debtRepay)||1)).filter(v=>isFinite(v));
+  const opYears = m.years.filter(y=>!y.isConstruction);
+  const dscrs = opYears.map(y=> y.ebitda/((y.interest+y.debtRepay)||1)).filter(v=>isFinite(v));
   const minDSCR = dscrs.length? Math.min(...dscrs) : NaN;
   const equity0 = m.years[0].equityOpen;
   const cf = [-equity0, ...m.years.map((y,i)=> i===m.N-1? y.dividends+m.equityValue : y.dividends)];
@@ -1915,6 +1922,12 @@ async function handleLogout(){
 function storageAvailable(){ return !!supabaseClient; }
 
 // ---------------- Portable JSON config export/import (works anywhere, no login needed) ----------------
+function startNewProject(){
+  if(!confirm('هيتم إعادة ضبط كل الحقول لقالب فارغ جاهز للتعبئة. أي تعديلات حالية غير محفوظة هتضيع. متأكد؟')) return;
+  if(!confirm('تأكيد أخير: احفظت شغلك الحالي (حفظ سريع أو تصدير JSON)؟ لو أيوه، دوس OK للمتابعة.')) return;
+  window.location.reload();
+}
+
 function exportConfigJSON(){
   try{
     const payload = { savedAt:new Date().toISOString(), appVersion:'unified-financing-system', data:collectDealInputs() };
@@ -1949,6 +1962,19 @@ function importConfigJSON(evt){
   };
   reader.readAsText(f);
 }
+async function quickSave(){
+  const nameField = el('saveDealName');
+  if(!nameField.value.trim()){
+    nameField.value = (el('dealName').value||'Deal') + ' — ' + new Date().toLocaleString('ar-EG');
+  }
+  if(storageAvailable()){
+    await saveDeal();
+  }
+  exportConfigJSON();
+  const statusEl = el('saveStatus');
+  if(statusEl) statusEl.textContent += (statusEl.textContent? ' | ':'') + 'تم أيضًا تصدير نسخة JSON على جهازك.';
+}
+
 async function saveDeal(){
   const name = el('saveDealName').value.trim();
   if(!name){ alert('اكتب اسم للصفقة الأول'); return; }
