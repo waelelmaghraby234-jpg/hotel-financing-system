@@ -1,0 +1,2106 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>Credit Desk — النظام الموحد لدراسات التمويل</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{ --ink-900:#0F1B2D; --ink-700:#223349; --ink-500:#4A5D74; --paper-50:#F3F5F3; --paper-0:#FFFFFF;
+    --brass:#A9853C; --brass-soft:#E7DCC1; --positive:#2F6B4F; --positive-soft:#E4EFE8;
+    --negative:#A23B2E; --negative-soft:#F5E6E2; --line:#D8DCD6; --line-soft:#E9EBE7; }
+  *{box-sizing:border-box;}
+  body{ margin:0; font-family:'IBM Plex Sans Arabic', sans-serif; background:var(--paper-50); color:var(--ink-900); }
+  .mono{font-family:'IBM Plex Mono', monospace; direction:ltr; display:inline-block;}
+  .app{ max-width:1420px; margin:0 auto; padding:22px 22px 60px; }
+  header.top{ display:flex; align-items:baseline; justify-content:space-between; border-bottom:1px solid var(--ink-900); padding-bottom:14px; margin-bottom:4px; }
+  .brand .mark{ font-family:'Fraunces', serif; font-weight:700; font-size:25px; }
+  .brand .sub{ font-size:12px; color:var(--ink-500); }
+  .top-meta{ font-size:11px; color:var(--ink-500); text-align:left; direction:ltr; }
+  nav.tabs{ display:flex; flex-wrap:wrap; gap:2px; margin:14px 0 18px; border-bottom:1px solid var(--line); }
+  nav.tabs button{ font-family:'IBM Plex Sans Arabic'; font-size:12px; background:none; border:none; padding:10px 13px; cursor:pointer; color:var(--ink-500); border-bottom:2px solid transparent; }
+  nav.tabs button .num{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--brass); margin-left:4px;}
+  nav.tabs button.active{ color:var(--ink-900); border-bottom-color:var(--brass); font-weight:600; }
+  .lang-btn{ font-family:'IBM Plex Sans Arabic'; font-size:12px; background:none; border:1px solid var(--brass); color:var(--brass); font-weight:700; padding:9px 16px; cursor:pointer; margin-inline-start:auto; align-self:center; }
+  .lang-btn:hover{ background:var(--brass-soft); }
+  .tab-panel{ display:none; } .tab-panel.active{ display:block; }
+  .panel{ background:var(--paper-0); border:1px solid var(--line); margin-bottom:18px;}
+  .panel-head{ padding:11px 15px; border-bottom:1px solid var(--line); font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--ink-500); display:flex; justify-content:space-between; }
+  .panel-body{ padding:15px; }
+  .field{ margin-bottom:12px; } .field label{ display:block; font-size:11.5px; color:var(--ink-700); margin-bottom:4px; }
+  .field input, .field select{ width:100%; padding:7px 9px; border:1px solid var(--line); font-family:'IBM Plex Mono', monospace; font-size:12.5px; direction:ltr; text-align:left; background:var(--paper-50); color:var(--ink-900); }
+  .field select{ font-family:'IBM Plex Sans Arabic'; direction:rtl; text-align:right;}
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; } .row3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; } .row4{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .sect{ font-size:10.5px; text-transform:uppercase; letter-spacing:1px; color:var(--brass); margin:16px 0 10px; padding-top:12px; border-top:1px solid var(--line-soft); } .sect:first-child{ margin-top:0; padding-top:0; border-top:none; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:0 26px; } @media (max-width:1000px){ .grid2{grid-template-columns:1fr;} }
+  table.stmt{ width:100%; border-collapse:collapse; font-size:11.5px; }
+  table.stmt th{ text-align:center; padding:6px; border-bottom:1px solid var(--ink-900); font-size:9.5px; color:var(--ink-500); text-transform:uppercase; font-family:'IBM Plex Sans Arabic'; white-space:nowrap; position:sticky; top:0; background:var(--paper-0); }
+  table.stmt th:first-child{ text-align:right; }
+  table.stmt td{ padding:5px 6px; text-align:center; border-bottom:1px solid var(--line-soft); font-family:'IBM Plex Mono', monospace; direction:ltr; white-space:nowrap; }
+  table.stmt td:first-child{ text-align:right; font-family:'IBM Plex Sans Arabic'; direction:rtl; }
+  table.stmt tr.total td{ font-weight:700; border-top:1px solid var(--ink-900); background:var(--paper-50); }
+  table.stmt tr.section td:first-child{ color:var(--brass); font-size:10px; text-transform:uppercase; padding-top:10px; }
+  table.stmt tr.check td{ background:var(--brass-soft); font-weight:700; }
+  table.stmt input.cell{ width:64px; padding:3px; border:1px solid var(--line); font-family:'IBM Plex Mono', monospace; font-size:11px; text-align:center; }
+  .stmt-scroll{ overflow-x:auto; }
+  .kpi-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border:1px solid var(--line); margin-bottom:18px;}
+  .kpi-pro-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px;}
+  @media (max-width:900px){ .kpi-pro-row{ grid-template-columns:1fr 1fr; } }
+  .kpi-pro{ background:var(--paper-0); border:1px solid var(--line); border-top:4px solid var(--brass); padding:18px 18px 16px; position:relative; }
+  .kpi-pro.c-positive{ border-top-color:var(--positive); }
+  .kpi-pro.c-ink{ border-top-color:var(--ink-900); }
+  .kpi-pro.c-brass{ border-top-color:var(--brass); }
+  .kpi-pro.c-negative{ border-top-color:var(--negative); }
+  .kpi-pro .label{ font-size:11px; color:var(--ink-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:10px; }
+  .kpi-pro .value{ font-family:'Fraunces', serif; font-size:28px; font-weight:700; direction:ltr; color:var(--ink-900); }
+  .kpi-pro .sub{ font-size:11px; color:var(--ink-500); margin-top:6px; direction:rtl; }
+  .cat-table-input{ width:90px; padding:5px 7px; border:1px solid var(--line); font-family:'IBM Plex Mono', monospace; font-size:12px; direction:ltr; text-align:left; background:var(--paper-50); }
+  .score-grid{ display:grid; grid-template-columns:1fr 260px; gap:16px; }
+  @media (max-width:1000px){ .score-grid{ grid-template-columns:1fr; } }
+  .score-items{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:800px){ .score-items{ grid-template-columns:1fr; } }
+  .score-item{ background:var(--paper-0); border:1px solid var(--line); padding:12px 14px; }
+  .score-item .top-row{ display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:6px; }
+  .score-item .weight{ font-size:10.5px; color:var(--brass); }
+  .score-item .val{ font-family:'Fraunces', serif; font-weight:700; font-size:15px; }
+  .score-item .bench{ font-size:10.5px; color:var(--ink-500); direction:ltr; text-align:left; margin-bottom:6px;}
+  .score-bar-track{ height:8px; background:var(--line-soft); position:relative; overflow:hidden; }
+  .score-bar-fill{ height:100%; }
+  .score-card{ background:var(--positive-soft); border:1px solid var(--positive); padding:24px; text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .score-card.grade-mid{ background:var(--brass-soft); border-color:var(--brass); }
+  .score-card.grade-low{ background:var(--negative-soft); border-color:var(--negative); }
+  .score-card .letter{ font-family:'Fraunces', serif; font-size:56px; font-weight:700; color:var(--positive); line-height:1; }
+  .score-card.grade-mid .letter{ color:var(--brass); } .score-card.grade-low .letter{ color:var(--negative); }
+  .score-card .desc{ font-size:13px; color:var(--ink-700); margin-top:8px; }
+  .score-card .num{ font-size:11px; color:var(--ink-500); margin-top:10px; }
+  .cov-card{ padding:14px 16px; border-radius:2px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
+  .cov-card.pass{ background:var(--positive-soft); border:1px solid var(--positive); }
+  .cov-card.fail{ background:var(--negative-soft); border:1px solid var(--negative); }
+  .cov-card .badge{ font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:12px; padding:3px 10px; border-radius:20px; }
+  .cov-card.pass .badge{ background:var(--positive); color:#fff; } .cov-card.fail .badge{ background:var(--negative); color:#fff; }
+  .flag-card{ padding:12px 16px; border-radius:2px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--line); }
+  .flag-card.ok{ background:var(--positive-soft); border-color:var(--positive); }
+  .flag-card.warn{ background:var(--brass-soft); border-color:var(--brass); }
+  .flag-card.bad{ background:var(--negative-soft); border-color:var(--negative); }
+  .flag-card .tag{ font-size:10px; padding:2px 9px; border-radius:20px; font-weight:700; }
+  .flag-card.ok .tag{ background:var(--positive); color:#fff; }
+  .flag-card.warn .tag{ background:var(--brass); color:#fff; }
+  .flag-card.bad .tag{ background:var(--negative); color:#fff; }
+  .exec-kpi-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:20px; }
+  @media (max-width:1100px){ .exec-kpi-row{ grid-template-columns:repeat(2,1fr); } }
+  .topbar{ display:flex; justify-content:space-between; align-items:center; background:var(--ink-900); color:#fff; padding:10px 16px; margin-bottom:10px; font-size:12.5px; }
+  .topbar .proj{ font-weight:600; }
+  .topbar .actions{ display:flex; gap:10px; align-items:center; }
+  .topbar button{ background:var(--brass); color:#fff; border:none; padding:7px 14px; font-size:12px; cursor:pointer; font-family:'IBM Plex Sans Arabic'; }
+  .topbar .audit-badge{ background:var(--positive); padding:6px 12px; font-size:11px; }
+  .topbar .audit-badge.fail{ background:var(--negative); }
+  .kpi{ background:var(--paper-0); padding:13px 15px; } .kpi .label{ font-size:10.5px; color:var(--ink-500); text-transform:uppercase; margin-bottom:6px;} .kpi .value{ font-family:'Fraunces', serif; font-size:19px; font-weight:600; direction:ltr; }
+  .pill{ display:inline-block; font-size:10.5px; padding:2px 8px; border-radius:20px; font-family:'IBM Plex Mono', monospace; } .pill.ok{ background:var(--positive-soft); color:var(--positive); } .pill.bad{ background:var(--negative-soft); color:var(--negative); }
+  .warn-banner{ padding:10px 14px; font-size:12px; margin-bottom:16px; border:1px solid var(--negative); background:var(--negative-soft); color:var(--negative); display:none; } .warn-banner.show{ display:block; }
+  .note{ font-size:11.5px; color:var(--ink-500); line-height:1.8; padding:12px 15px; background:var(--paper-50); border-inline-start:3px solid var(--brass); margin-bottom:16px;}
+  .btn{ padding:9px 16px; border:1px solid var(--ink-900); background:var(--paper-0); color:var(--ink-900); font-size:12.5px; cursor:pointer; font-family:'IBM Plex Sans Arabic'; margin-inline-end:8px;}
+  .btn.primary{ background:var(--ink-900); color:#fff; }
+  .report-block{ padding:22px; background:var(--paper-0); border:1px solid var(--line); }
+  .report-title{ font-family:'Fraunces', serif; font-size:23px; font-weight:700; border-bottom:2px solid var(--ink-900); padding-bottom:10px; margin-bottom:16px;}
+  .report-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px 30px; font-size:13px; margin-bottom:18px;}
+  .report-grid div b{ color:var(--ink-500); font-weight:400; font-size:11px; display:block; text-transform:uppercase; margin-bottom:2px;}
+  .upload-box{ border:2px dashed var(--line); padding:16px; text-align:center; margin-bottom:16px; font-size:12px; }
+  @media print{ nav.tabs,.no-print{display:none !important;} .tab-panel{display:none !important;} .tab-panel.print-active{display:block !important;} body{background:#fff;} }
+  footer.foot{ margin-top:26px; padding-top:12px; border-top:1px solid var(--line); font-size:10.5px; color:var(--ink-500); display:flex; justify-content:space-between;}
+</style>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<div id="authOverlay" style="position:fixed;inset:0;background:var(--paper-50);z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="width:360px;max-width:90vw;background:var(--paper-0);border:1px solid var(--line);padding:32px;">
+    <div style="text-align:center;margin-bottom:24px;">
+      <div style="font-family:'Fraunces',serif;font-weight:700;font-size:24px;">Credit Desk</div>
+      <div style="font-size:12px;color:var(--ink-500);margin-top:4px;">سجّل دخولك للمتابعة</div>
+    </div>
+    <div class="field"><label>الإيميل</label><input id="authEmail" type="email" style="direction:ltr;text-align:left;font-family:'IBM Plex Mono',monospace;" placeholder="name@example.com"></div>
+    <div class="field"><label>كلمة المرور</label><input id="authPassword" type="password" style="direction:ltr;text-align:left;font-family:'IBM Plex Mono',monospace;"></div>
+    <div id="authError" style="font-size:12px;color:var(--negative);margin-bottom:10px;"></div>
+    <button class="btn primary" style="width:100%;margin-bottom:8px;" onclick="handleLogin()">تسجيل الدخول</button>
+    <button class="btn" style="width:100%;" onclick="handleSignup()">حساب جديد (Sign up)</button>
+    <div id="authStatus" style="font-size:11.5px;color:var(--ink-500);margin-top:12px;text-align:center;"></div>
+  </div>
+</div>
+
+<div class="app" id="mainApp" style="display:none;">
+  <header class="top">
+    <div class="brand"><span class="mark">Credit Desk</span><span class="sub" data-ar=" — النظام الموحد لدراسات التمويل: من الإدخال إلى تقرير البنك" data-en=" — Unified Financing Study System: From Input to Bank Report"> — النظام الموحد لدراسات التمويل: من الإدخال إلى تقرير البنك</span></div>
+    <div class="top-meta">UNIFIED MODEL v1<br><span class="mono" id="stamp"></span></div>
+  </header>
+
+  <div class="topbar no-print">
+    <div class="proj" id="topbarProjName">—</div>
+    <div class="actions">
+      <button id="topLangBtn" style="background:transparent;border:1px solid #fff;font-weight:700;" onclick="toggleLang()">EN / عربي</button>
+      <span class="audit-badge" id="auditBadge">AUDIT —</span>
+      <button onclick="window.print()">🖨 طباعة التاب الحالي</button>
+      <button onclick="quickSave()" style="background:var(--positive);">💾 حفظ سريع</button>
+      <button onclick="exportToExcel()">Export Excel ↓</button>
+      <button onclick="handleLogout()" style="background:var(--negative);">خروج</button>
+    </div>
+  </div>
+
+  <nav class="tabs no-print">
+    <button class="tab-btn active" data-tab="tdash"><span class="num">00</span><span class="lbl" data-ar="نظرة عامة (Dashboard)" data-en="Dashboard">نظرة عامة (Dashboard)</span></button>
+    <button class="tab-btn" data-tab="t0"><span class="num">01</span><span class="lbl" data-ar="الإعداد والميزانية الافتتاحية" data-en="Setup &amp; Opening Balance">الإعداد والميزانية الافتتاحية</span></button>
+    <button class="tab-btn" data-tab="t1"><span class="num">02</span><span class="lbl" data-ar="الإيرادات" data-en="Revenue">الإيرادات</span></button>
+    <button class="tab-btn" data-tab="tusali"><span class="num">03</span><span class="lbl" data-ar="USALI" data-en="USALI">USALI</span></button>
+    <button class="tab-btn" data-tab="tcapex"><span class="num">04</span><span class="lbl" data-ar="التكلفة الاستثمارية وIDC" data-en="Investment Cost &amp; IDC">التكلفة الاستثمارية وIDC</span></button>
+    <button class="tab-btn" data-tab="t2"><span class="num">05</span><span class="lbl" data-ar="التمويل وجدول السداد" data-en="Financing &amp; Repayment">التمويل وجدول السداد</span></button>
+    <button class="tab-btn" data-tab="t3"><span class="num">06</span><span class="lbl" data-ar="القوائم المالية" data-en="Financial Statements">القوائم المالية</span></button>
+    <button class="tab-btn" data-tab="t4"><span class="num">07</span><span class="lbl" data-ar="الاتجاه الائتماني" data-en="Credit Trend">الاتجاه الائتماني</span></button>
+    <button class="tab-btn" data-tab="t5"><span class="num">08</span><span class="lbl" data-ar="التقييم" data-en="Valuation">التقييم</span></button>
+    <button class="tab-btn" data-tab="t7"><span class="num">09</span><span class="lbl" data-ar="مؤشرات البنك (IRR/LLCR/LTV)" data-en="Bank Metrics (IRR/LLCR/LTV)">مؤشرات البنك (IRR/LLCR/LTV)</span></button>
+    <button class="tab-btn" data-tab="tscore"><span class="num">10</span><span class="lbl" data-ar="تصنيف ائتماني ومخاطر" data-en="Credit Rating &amp; Risk">تصنيف ائتماني ومخاطر</span></button>
+    <button class="tab-btn" data-tab="tscn"><span class="num">11</span><span class="lbl" data-ar="السيناريوهات" data-en="Scenarios">السيناريوهات</span></button>
+    <button class="tab-btn" data-tab="tsens"><span class="num">12</span><span class="lbl" data-ar="تحليل الحساسية" data-en="Sensitivity">تحليل الحساسية</span></button>
+    <button class="tab-btn" data-tab="taudit"><span class="num">13</span><span class="lbl" data-ar="التدقيق" data-en="Audit">التدقيق</span></button>
+    <button class="tab-btn" data-tab="t6"><span class="num">14</span><span class="lbl" data-ar="تقرير البنك" data-en="Bank Report">تقرير البنك</span></button>
+    <button class="tab-btn" data-tab="t8"><span class="num">15</span><span class="lbl" data-ar="المحفظة" data-en="Portfolio">المحفظة</span></button>
+    <button class="lang-btn no-print" id="langToggleBtn" onclick="toggleLang()">EN / عربي</button>
+  </nav>
+
+  <!-- ============ TAB SCORECARD ============ -->
+  <div class="tab-panel" id="tscore">
+    <div class="score-grid">
+      <div>
+        <div class="panel"><div class="panel-head"><span>مكونات التقييم الائتماني (موزونة)</span><span>Weighted Scorecard</span></div>
+          <div class="panel-body score-items" id="scoreItems"></div>
+        </div>
+      </div>
+      <div class="score-card" id="scoreCard">
+        <div class="letter" id="scoreLetter">—</div>
+        <div class="desc" id="scoreDesc">—</div>
+        <div class="num" id="scoreNumOut">— / 100</div>
+      </div>
+    </div>
+
+    <div class="panel"><div class="panel-head"><span>قياس مخاطر التعثر (Default Risk) — مستوحى من Merton / Basel III</span><span>Default Risk</span></div>
+      <div class="panel-body">
+        <div class="kpi-pro-row" id="defaultRiskKpi"></div>
+        <div style="font-size:11px;color:var(--ink-500);">EL = PD × LGD · LGD تقريبية = LTV سنة 1 · PD مبنية على جدول احتمالات تعثر توضيحي (Illustrative) مرتبط بالتصنيف الائتماني المحسوب — ليست بيانات وكالة تصنيف رسمية.</div>
+      </div>
+    </div>
+
+    <div class="panel"><div class="panel-head"><span>سيناريوهات الضغط (Stress Testing)</span><span>Stress Scenarios</span></div>
+      <div class="panel-body">
+        <div class="row3">
+          <div class="field"><label>صدمة الإشغال (نقاط مئوية-)</label><input id="stressOccPts" type="number" value="10"></div>
+          <div class="field"><label>صدمة ADR (%-)</label><input id="stressAdrPct" type="number" value="10"></div>
+          <div class="field"><label>صدمة سعر الفائدة (نقاط أساس+)</label><input id="stressRateBps" type="number" value="200"></div>
+        </div>
+        <table class="stmt" id="stressTable"></table>
+      </div>
+    </div>
+
+    <div class="panel"><div class="panel-head"><span>مقارنة السوق (منهجية STR/MENA) — فنادق مرجعية في نفس المنطقة</span><span>Market Benchmark (STR/MENA)</span></div>
+      <div class="panel-body">
+        <table class="stmt" id="marketBenchTable"></table>
+        <div style="font-size:11px;color:var(--ink-500);margin-top:8px;" id="marketBenchSource"></div>
+      </div>
+    </div>
+
+    <div class="panel"><div class="panel-head"><span>🔍 التحقق من واقعية الافتراضات</span><span>Assumptions Reality Check</span></div>
+      <div class="panel-body" id="realityCheckBody"></div>
+    </div>
+  </div>
+
+  <!-- ============ TAB DASHBOARD ============ -->
+  <div class="tab-panel active" id="tdash">
+    <div class="exec-kpi-row" id="execKpi"></div>
+    <div class="panel"><div class="panel-head"><span>ملخص سنوي — 10 سنوات</span><span>Annual Summary</span></div>
+      <div class="panel-body stmt-scroll"><table class="stmt" id="dashTable"></table></div>
+    </div>
+  </div>
+
+  <!-- ============ TAB 0 ============ -->
+  <div class="tab-panel" id="t0">
+    <div class="upload-box no-print">
+      استورد قاعدة بيانات JSON (من سكريبت الاستيراد) لملء البيانات تلقائيًا —
+      <input type="file" id="fileInput" accept=".json" style="display:inline-block;width:auto;">
+    </div>
+    <div class="panel"><div class="panel-head"><span>بيانات المشروع الأساسية</span><span>Project Data</span></div>
+      <div class="panel-body">
+        <div class="row3">
+          <div class="field"><label>اسم المشروع</label><input id="dealName" style="direction:rtl;text-align:right;font-family:'IBM Plex Sans Arabic'" value="فندق ماجاويش — Rixos Magawish Bay View"></div>
+          <div class="field"><label>عنوان / موقع المشروع</label><input id="projectAddress" style="direction:rtl;text-align:right;font-family:'IBM Plex Sans Arabic'" value="الغردقة، البحر الأحمر، مصر"></div>
+          <div class="field"><label>نوع النشاط</label><select id="activityType"><option value="hotel">فندقي (USALI)</option><option value="realestate">عقاري</option><option value="generic">نشاط آخر</option></select></div>
+        </div>
+        <div class="row3">
+          <div class="field"><label>اسم الشركة المالكة</label><input id="owningCompany" style="direction:rtl;text-align:right;font-family:'IBM Plex Sans Arabic'" value="شركة الفا للاستثمار الفندقي"></div>
+          <div class="field"><label>اسم المشغل (Operator)</label><input id="operatorName" style="direction:rtl;text-align:right;font-family:'IBM Plex Sans Arabic'" value="Rixos Hotels"></div>
+          <div class="field"><label>عدد سنوات العرض (حتى 10)</label><input id="projYears" type="number" min="2" max="10" value="8"></div>
+        </div>
+        <div class="row3">
+          <div class="field"><label>سنة بدء التمويل (سنة 1 في كل الجداول)</label><input id="financingStartYear" type="number" value="2026"></div>
+          <div class="field"><label>سنة الافتتاح التشغيلي المتوقعة</label><input id="openingYear" type="number" value="2027"></div>
+        </div>
+        <div class="sect">العملة</div>
+        <div class="row3">
+          <div class="field"><label>عملة الدراسة الأساسية</label><input value="USD (دولار أمريكي)" disabled style="background:var(--paper-50);"></div>
+          <div class="field"><label>معامل التحويل (1 دولار = كام جنيه)</label><input id="fxRate" type="number" step="0.01" value="48.50"></div>
+          <div class="field"><label>عملة عرض التقارير</label><select id="displayCurrency"><option value="USD">دولار (USD)</option><option value="EGP">جنيه مصري (EGP)</option></select></div>
+        </div>
+        <div style="font-size:11px;color:var(--ink-500);">كل الحسابات الداخلية بالدولار؛ اختيار "جنيه مصري" هنا بيحوّل الأرقام المعروضة فقط في كل الشاشات والتصدير بنفس معامل التحويل.</div>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel"><div class="panel-head"><span>الميزانية الافتتاحية — سنة الأساس (قبل التمويل)</span><span>Opening Balance</span></div>
+        <div class="panel-body">
+          <div class="note" style="margin-bottom:14px;">⚠ اكتب الرقم كامل من غير اختصار — مثلاً 30 مليون دولار = <span class="mono">30000000</span> (مش 30). النظام بيلخّص الأرقام في العرض بس تلقائيًا (30.00M).</div>
+          <div class="sect">الأصول</div>
+          <div class="row2"><div class="field"><label>النقدية</label><input id="cash0" type="number" value="8000000"></div><div class="field"><label>عملاء (AR)</label><input id="ar0" type="number" value="3000000"></div></div>
+          <div class="row2"><div class="field"><label>مخزون</label><input id="inv0" type="number" value="1500000"></div><div class="field"><label>أصول متداولة أخرى</label><input id="otherCA0" type="number" value="2000000"></div></div>
+          <div class="row2"><div class="field"><label>صافي الأصول الثابتة</label><input id="ppe0" type="number" value="220000000"></div><div class="field"><label>أصول غير متداولة أخرى</label><input id="otherNCA0" type="number" value="4000000"></div></div>
+          <div class="sect">الخصوم وحقوق الملكية</div>
+          <div class="row2"><div class="field"><label>موردون (AP)</label><input id="ap0" type="number" value="6000000"></div><div class="field"><label>خصوم متداولة أخرى</label><input id="otherCL0" type="number" value="2500000"></div></div>
+          <div class="row2"><div class="field"><label>دين آخر خارج التمويل الجديد</label><input id="otherDebt0" type="number" value="0"></div><div class="field"><label>حقوق الملكية (0 = تُحسب تلقائيًا)</label><input id="equity0" type="number" value="0"></div></div>
+        </div>
+      </div>
+      <div class="panel"><div class="panel-head"><span>افتراضات تشغيلية ورأس مال عامل</span><span>Operating</span></div>
+        <div class="panel-body">
+          <div class="row3">
+            <div class="field"><label>Capex % من الإيراد</label><input id="capexPct" type="number" value="4"></div>
+            <div class="field"><label>معدل إهلاك % من صافي الأصول</label><input id="deprRate" type="number" value="6"></div>
+            <div class="field"><label>معدل الضريبة %</label><input id="taxRate" type="number" value="22.5"></div>
+          </div>
+          <div class="row3">
+            <div class="field"><label>أيام تحصيل العملاء</label><input id="arDays" type="number" value="20"></div>
+            <div class="field"><label>أيام المخزون</label><input id="invDays" type="number" value="15"></div>
+            <div class="field"><label>أيام سداد الموردين</label><input id="apDays" type="number" value="35"></div>
+          </div>
+          <div class="field"><label>نسبة توزيع الأرباح % (بعد سداد التمويل بالكامل فقط)</label><input id="divPayout" type="number" value="0"></div>
+          <div class="note" style="margin-top:0;margin-bottom:14px;">🔒 شرط بنكي قياسي مُفعّل تلقائيًا: النظام بيمنع أي توزيعات أرباح للمساهمين طول فترة الإنشاء وطول ما رصيد التمويل قائم — التوزيع بيبقى ممكن بس بعد سداد القرض بالكامل.</div>
+
+          <div class="sect">إيرادات ومصروفات الشركة المالكة (خارج الفندق)</div>
+          <div class="row2">
+            <div class="field"><label>إيرادات أخرى سنة 1 (إيجارات وغيرها)</label><input id="companyOtherRevY1" type="number" value="0"></div>
+            <div class="field"><label>نمو الإيرادات الأخرى السنوي %</label><input id="companyOtherRevGrowth" type="number" value="10"></div>
+          </div>
+          <div class="row2">
+            <div class="field"><label>مصروفات إدارية وعمومية للشركة — سنة 1</label><input id="companyGAY1" type="number" value="200000"></div>
+            <div class="field"><label>نمو المصروفات الإدارية السنوي %</label><input id="companyGAGrowth" type="number" value="10"></div>
+          </div>
+          <div style="font-size:11px;color:var(--ink-500);">دي مصروفات الشركة المالكة نفسها (مختلفة عن مصروفات تشغيل الفندق اللي في تاب USALI) — بتتحط بعد ربح الفندق مباشرة في قائمة الدخل.</div>
+
+          <div class="sect">افتراضات التقييم (WACC/DCF)</div>
+          <div class="row3">
+            <div class="field"><label>Rf %</label><input id="rf" type="number" step="0.1" value="18"></div>
+            <div class="field"><label>MRP %</label><input id="mrp" type="number" step="0.1" value="7.5"></div>
+            <div class="field"><label>Beta</label><input id="beta" type="number" step="0.05" value="1.0"></div>
+          </div>
+          <div class="field"><label>معدل النمو الأبدي %</label><input id="terminalG" type="number" step="0.1" value="3.5"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB CAPEX/IDC ============ -->
+  <div class="tab-panel" id="tcapex">
+    <div class="kpi-pro-row" id="capexKpi"></div>
+    <div class="panel"><div class="panel-head"><span>بنود التكلفة الاستثمارية</span><span>Investment Cost Breakdown</span></div>
+      <div class="panel-body">
+        <div class="note" style="margin-bottom:14px;">⚠ اكتب الرقم كامل من غير اختصار — مثلاً 30 مليون دولار = <span class="mono">30000000</span> (مش 30).</div>
+        <table class="stmt" id="capexCatTable"></table>
+        <div class="row3" style="margin-top:16px;">
+          <div class="field"><label>فترة السحب (أرباع سنوية) — الإنشاء</label><input id="constructionQuarters" type="number" value="8"></div>
+          <div class="field"><label>فترة السماح (أرباع سنوية) — بعد اكتمال السحب</label><input id="graceQuartersInput" type="number" value="0"></div>
+          <div class="field"><label>نسبة الدين المستهدفة من إجمالي الاستثمار %</label><input id="targetDebtPct" type="number" value="75"></div>
+        </div>
+        <div class="row3">
+          <div class="field"><label>نسبة حصة المالك (Equity) %</label><input id="targetEquityPctDisplay" type="text" value="" disabled style="background:var(--paper-50);"></div>
+          <div class="field"><label>إجمالي فترة الرسملة (سحب + سماح)</label><input id="totalCapPeriodDisplay" type="text" value="" disabled style="background:var(--paper-50);"></div>
+          <div class="field"><label>سنة بداية السداد (تلقائي)</label><input id="loanStartYearDisplay" type="text" value="" disabled style="background:var(--paper-50);"></div>
+        </div>
+        <div class="note" style="margin-top:6px;">الفوائد بتترسمل (تُضاف لأصل القرض) طوال فترتي السحب والسماح مع بعض — مفيش سداد نقدي فعلي في الفترتين دول. السداد الفعلي بيبدأ تلقائيًا في تاب 02 بعد نهاية الفترتين.</div>
+      </div>
+    </div>
+    <div class="panel"><div class="panel-head"><span>جدول الصرف الفصلي وIDC التراكمي (ما قبل COD)</span><span>Drawdown & Capitalized Interest Schedule</span></div>
+      <div class="panel-body stmt-scroll" style="max-height:420px;overflow-y:auto;"><table class="stmt" id="idcTable"></table></div>
+    </div>
+    <div class="note">القرض المستخدم في تاب "02 التمويل وجدول السداد" بيتغذى تلقائيًا من: <b>الدين المسحوب لتمويل الإنشاء + إجمالي الفوائد المرسملة (IDC)</b> المحسوبين هنا. لو عاوز تضيف شرائح تمويل إضافية فوق كده، تقدر تضيفها يدويًا من تاب 02.</div>
+  </div>
+
+  <!-- ============ TAB 1 : REVENUE ============ -->
+  <div class="tab-panel" id="t1">
+    <div id="hotelRevPanel">
+      <div class="panel"><div class="panel-head"><span>افتراضات ثابتة — فندقي</span><span>Hotel Fixed Assumptions</span></div>
+        <div class="panel-body row4">
+          <div class="field"><label>عدد الغرف سنة 1</label><input id="h_keysY1" type="number" value="442"></div>
+          <div class="field"><label>عدد الغرف من سنة 2</label><input id="h_keysY2" type="number" value="508"></div>
+          <div class="field"><label>معامل التصعيد (Gross-up)</label><input id="h_grossUp" type="number" step="0.01" value="1.0"></div>
+          <div class="field"><label>F&amp;B (% من إيراد الغرف)</label><input id="h_fbPct" type="number" step="1" value="15"></div>
+          <div class="field"><label>إيرادات أخرى (% من إيراد الغرف)</label><input id="h_otherPct" type="number" step="1" value="8"></div>
+          <div class="field"><label>تكلفة الإيرادات الأخرى %</label><input id="h_otherCostPct" type="number" step="1" value="50"></div>
+          <div class="field"><label>رسوم تسويق %</label><input id="h_mktFee" type="number" step="0.1" value="1"></div>
+          <div class="field"><label>رسوم إدارة أساسية %</label><input id="h_baseMgmt" type="number" step="0.1" value="2.5"></div>
+          <div class="field"><label>رسوم ترخيص %</label><input id="h_licFee" type="number" step="0.1" value="1"></div>
+        </div>
+      </div>
+      <div class="panel"><div class="panel-head"><span>محركات سنوية متغيرة — بنفس أسلوب USALI (عدّل أي خلية)</span><span>Year-by-Year Drivers</span></div>
+        <div class="panel-body stmt-scroll"><table class="stmt" id="hotelYearTable"></table></div>
+      </div>
+    </div>
+
+    <div id="rePanel" style="display:none">
+      <div class="panel"><div class="panel-head"><span>بيانات عقارية</span><span>Real Estate</span></div>
+        <div class="panel-body row3">
+          <div class="field"><label>إجمالي المساحة القابلة للبيع (م²)</label><input id="r_area" type="number" value="45000"></div>
+          <div class="field"><label>سعر المتر سنة 1</label><input id="r_price1" type="number" value="28000"></div>
+          <div class="field"><label>معدل البيع السنوي %</label><input id="r_absorption" type="number" value="18"></div>
+          <div class="field"><label>تصعيد السعر %</label><input id="r_escalation" type="number" value="8"></div>
+          <div class="field"><label>مساحة تأجيرية (م²)</label><input id="r_rentArea" type="number" value="8000"></div>
+          <div class="field"><label>إيجار المتر</label><input id="r_rent1" type="number" value="1400"></div>
+          <div class="field"><label>COGS %</label><input id="r_cogsPct" type="number" value="55"></div>
+          <div class="field"><label>Opex %</label><input id="r_opexPct" type="number" value="12"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="genPanel" style="display:none">
+      <div class="panel"><div class="panel-head"><span>إيرادات عامة</span><span>Generic</span></div>
+        <div class="panel-body row4">
+          <div class="field"><label>الإيراد الأساسي سنة 1</label><input id="g_base" type="number" value="120000000"></div>
+          <div class="field"><label>النمو السنوي %</label><input id="g_growth" type="number" value="10"></div>
+          <div class="field"><label>COGS %</label><input id="g_cogsPct" type="number" value="34"></div>
+          <div class="field"><label>Opex %</label><input id="g_opexPct" type="number" value="18"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB USALI ============ -->
+  <div class="tab-panel" id="tusali">
+    <div id="usaliContent">
+      <div class="kpi-pro-row" id="usaliKpi"></div>
+      <div class="panel"><div class="panel-head"><span>قائمة دخل الفندق طبقًا لمعيار USALI</span><span>USALI Income Statement</span></div>
+        <div class="panel-body stmt-scroll"><table class="stmt" id="usaliTable"></table></div>
+      </div>
+    </div>
+    <div class="note" id="usaliNotHotelNote" style="display:none;">تاب USALI مخصص للنشاط الفندقي فقط. النشاط الحالي المختار مش "فندقي" — غيّر نوع النشاط من تاب 00 لو عاوز تشوف القائمة دي.</div>
+  </div>
+
+  <!-- ============ TAB 2 : LOAN ============ -->
+  <div class="tab-panel" id="t2">
+    <div class="warn-banner" id="warnBanner"></div>
+    <div class="panel"><div class="panel-head"><span>هيكل القرض</span><span>Loan Build-up</span></div>
+      <div class="panel-body">
+        <div id="tranchesList"></div>
+        <button class="btn no-print" onclick="addTranche()">+ إضافة شريحة سحب</button>
+        <button class="btn no-print" onclick="addCapInterest()">+ إضافة فائدة مرسملة</button>
+        <div class="row3" style="margin-top:16px;">
+          <div class="field"><label>عملة التمويل (مبلغ القرض والشرائح)</label><select id="loanCurrency"><option value="USD">دولار (USD)</option><option value="EGP">جنيه مصري (EGP)</option></select></div>
+          <div class="field"><label>السعر المرجعي + الهامش (السعر الفعلي %)</label><input id="loanRate" type="number" step="0.05" value="7.75"></div>
+          <div class="field"><label>دورية السداد</label><select id="loanFreq"><option value="6">نصف سنوية</option><option value="3">ربع سنوية</option></select></div>
+        </div>
+        <div class="note" style="margin-top:0;">القوائم المالية دايمًا بتتحسب داخليًا بعملة التشغيل الأساسية (دولار)، وبتتحول لعرضك النهائي حسب "عملة عرض التقارير" في تاب 00. لو التمويل بعملة مختلفة (مثلاً القرض بالجنيه والقوائم بتتعرض بالدولار، أو العكس)، النظام بيحوّل تلقائيًا باستخدام معامل التحويل في تاب 00 عشان يدمج القرض صح مع باقي القوائم.</div>
+        <div class="row2">
+          <div class="field"><label>سنة بداية السداد (من ضمن سنوات العرض)</label><input id="loanStartYear" type="number" value="1"></div>
+          <div class="field"><label>عدد فترات السداد</label><input id="numPeriods" type="number" value="14"></div>
+        </div>
+        <div class="field"><button class="btn no-print" onclick="regeneratePeriods()">توليد/إعادة توليد جدول الفترات</button></div>
+      </div>
+    </div>
+    <div class="kpi-row" id="loanKpi"></div>
+    <div class="panel"><div class="panel-head"><span>جدول السداد — نسبة كل فترة من أصل القرض قابلة للتعديل</span><span>Repayment Schedule</span></div>
+      <div class="panel-body stmt-scroll" style="max-height:480px;overflow-y:auto;"><table class="stmt" id="repayTable"></table></div>
+      <div class="panel-body" style="padding-top:0;"><span style="font-size:11px;color:var(--ink-500);">مجموع النسب: </span><span class="mono" id="pctSum"></span></div>
+    </div>
+  </div>
+
+  <!-- ============ TAB 3 : STATEMENTS ============ -->
+  <div class="tab-panel" id="t3">
+    <div class="panel"><div class="panel-head"><span>قائمة الدخل</span><span>Income Statement</span></div><div class="panel-body stmt-scroll"><table class="stmt" id="isTable"></table></div></div>
+    <div class="panel"><div class="panel-head"><span>الميزانية العمومية</span><span>Balance Sheet</span></div><div class="panel-body stmt-scroll"><table class="stmt" id="bsTable"></table><div id="equity0MismatchNote"></div></div></div>
+    <div class="panel"><div class="panel-head"><span>التدفقات النقدية</span><span>Cash Flow</span></div><div class="panel-body stmt-scroll"><table class="stmt" id="cfTable"></table></div></div>
+  </div>
+
+  <!-- ============ TAB 4 : CREDIT ============ -->
+  <div class="tab-panel" id="t4">
+    <div class="panel"><div class="panel-head"><span>المؤشرات والتصنيف عبر السنوات</span><span>Credit Trend</span></div><div class="panel-body stmt-scroll"><table class="stmt" id="creditTable"></table></div></div>
+    <div class="panel"><div class="panel-head"><span id="covCardsYearLabel">فحص التعهدات — سنة 1</span><span>Bank Covenants</span></div><div class="panel-body" id="covCards"></div></div>
+    <div class="panel"><div class="panel-head"><span>فحص التعهدات عبر السنوات</span><span>Covenants Trend</span></div><div class="panel-body stmt-scroll"><table class="stmt" id="covTable"></table></div></div>
+  </div>
+
+  <!-- ============ TAB 5 : VALUATION ============ -->
+  <div class="tab-panel" id="t5">
+    <div class="grid2">
+      <div class="panel"><div class="panel-head"><span>WACC</span><span>WACC</span></div><div class="panel-body" id="waccOut"></div></div>
+      <div class="panel"><div class="panel-head"><span>ملخص التقييم</span><span>Valuation</span></div><div class="panel-body" id="valSummary"></div></div>
+    </div>
+    <div class="panel"><div class="panel-head"><span>DCF</span><span>Unlevered FCF</span></div><div class="panel-body stmt-scroll"><table class="stmt" id="dcfTable"></table></div></div>
+  </div>
+
+  <!-- ============ TAB 6 : REPORT ============ -->
+  <div class="tab-panel" id="t6">
+    <div class="no-print" style="margin-bottom:14px;"><button class="btn primary" onclick="window.print()">طباعة / تصدير PDF</button></div>
+    <div class="report-block" id="bankReport"></div>
+  </div>
+
+  <!-- ============ TAB 7 : BANK METRICS ============ -->
+  <div class="tab-panel" id="t7">
+    <div class="kpi-row" id="bankKpi"></div>
+    <div class="panel"><div class="panel-head"><span>مؤشرات بنكية كاملة عبر السنوات</span><span>DSCR / LLCR / PLCR / LTV / Debt Yield</span></div><div class="panel-body stmt-scroll"><table class="stmt" id="bankMetricsTable"></table></div></div>
+    <div class="note">LLCR وPLCR بيتحسبوا بخصم CFADS (EBITDA بعد الضريبة) بسعر فائدة القرض حتى نهاية مدة القرض (LLCR) أو نهاية أفق الدراسة (PLCR)، مقسومة على الرصيد القائم بداية كل سنة. LTV بيستخدم القيمة المؤسسية (EV) من تاب التقييم كقيمة مرجعية.</div>
+  </div>
+
+  <!-- ============ TAB 8 : DATABASE ============ -->
+  <div class="tab-panel" id="t8">
+    <div class="panel" style="border-color:var(--negative);"><div class="panel-head" style="background:var(--negative-soft);"><span>➕ ابدأ مشروع جديد (شركة/فندق تاني في نفس المحفظة)</span><span>Start New Project</span></div>
+      <div class="panel-body">
+        <div class="note" style="margin-bottom:14px;">محفظتك ممكن تضم أكتر من مشروع (شركات/فنادق مختلفة). لو عندك تعديلات حالية مش محفوظة، احفظها الأول (زرار "💾 حفظ سريع" فوق) قبل ما تبدأ مشروع جديد عشان متفقدهاش.</div>
+        <button class="btn no-print" style="background:var(--negative);color:#fff;" onclick="startNewProject()">➕ ابدأ مشروع جديد فارغ</button>
+      </div>
+    </div>
+    <div class="panel" style="border-color:var(--brass);"><div class="panel-head" style="background:var(--brass-soft);"><span>⭐ الطريقة الموصى بيها — ملف إعدادات محمول (JSON)</span><span>Recommended: Portable Config File</span></div>
+      <div class="panel-body">
+        <div class="note" style="margin-bottom:14px;">دي الطريقة اللي هتشتغل معاك **من أي جهاز وأي مكان** بدون ما تعتمد على Claude خالص. بتصدّر كل مدخلاتك في ملف صغير (JSON)، وترفعه على أي حاجة تختارها (GitHub، Google Drive، إيميلك، فلاشة)، وترجع تفتحه في أي وقت على أي كمبيوتر — الملف ده هو "قاعدة البيانات" المحمولة بتاعتك.</div>
+        <div class="row2">
+          <div class="field" style="display:flex;align-items:flex-end;"><button class="btn primary no-print" onclick="exportConfigJSON()">⬇ تصدير كل المدخلات الحالية (ملف JSON)</button></div>
+          <div class="field"><label>استيراد ملف إعدادات محفوظ</label><input type="file" id="configFileInput" accept=".json" onchange="importConfigJSON(event)"></div>
+        </div>
+        <div id="configStatus" style="font-size:12px;color:var(--positive);margin-top:8px;"></div>
+        <div class="sect">إزاي تستخدمها مع GitHub (مجاني ومتاح من أي مكان)</div>
+        <ol style="font-size:12.5px;color:var(--ink-700);line-height:2;padding-inline-start:20px;">
+          <li>اعمل حساب مجاني على github.com (لو مش عندك)</li>
+          <li>اعمل Repository جديد (يفضّل Private)</li>
+          <li>اضغط "⬇ تصدير" فوق، وارفع الملف اللي نزل (وكمان ممكن ترفع نسخة من ملف الـHTML ده نفسه) على الـRepository بزرار "Add file → Upload files"</li>
+          <li>في أي جهاز تاني: نزّل الملفين من GitHub، افتح الـHTML، واستخدم "استيراد" فوق وارفعله ملف الـJSON</li>
+        </ol>
+        <div style="font-size:11px;color:var(--ink-500);">بدائل أسهل من GitHub لو مش عايز تتعامل معاه: ارفع نفس ملف الـJSON على Google Drive أو ابعته لنفسك بالإيميل كمرفق.</div>
+      </div>
+    </div>
+
+    <div class="panel"><div class="panel-head"><span>تصدير Excel</span><span>Export</span></div>
+      <div class="panel-body">
+        <button class="btn primary no-print" onclick="exportToExcel()">تصدير كل القوائم والمؤشرات إلى ملف Excel</button>
+        <div style="font-size:11px;color:var(--ink-500);margin-top:8px;">هيطلع ملف .xlsx فيه شيتات: قائمة الدخل، الميزانية، التدفقات النقدية، جدول السداد، المؤشرات الائتمانية والبنكية، والتقييم — بنفس أرقام الشاشة لحظة الضغط.</div>
+      </div>
+    </div>
+
+    <div class="panel"><div class="panel-head"><span>الحفظ السحابي (حسابك الشخصي)</span><span>Cloud Save (Your Account)</span></div>
+      <div class="panel-body">
+        <div class="note">دلوقتي بتشتغل بحسابك الحقيقي (سجّلت دخول بإيميلك) — أي صفقة تحفظها هنا بتتخزن في قاعدة بياناتك على Supabase، وتقدر توصلها من أي جهاز بمجرد ما تسجّل دخول بنفس الإيميل.</div>
+        <div class="row2">
+          <div class="field"><label>اسم الصفقة المحفوظة</label><input id="saveDealName" style="direction:rtl;text-align:right;font-family:'IBM Plex Sans Arabic'" value=""></div>
+          <div class="field" style="display:flex;align-items:flex-end;"><button class="btn no-print" onclick="saveDeal()">حفظ في قاعدة البيانات السحابية</button></div>
+        </div>
+        <div id="saveStatus" style="font-size:12px;color:var(--positive);"></div>
+      </div>
+    </div>
+    <div class="panel"><div class="panel-head"><span>مشروعات المحفظة (سحابيًا) — كل صفقة/شركة محفوظة باسمها</span><span>Portfolio Projects (Cloud)</span></div>
+      <div class="panel-body" id="dealsListBody"><span style="font-size:12px;color:var(--ink-500);">جارِ التحميل...</span></div>
+    </div>
+
+  </div>
+
+  <!-- ============ TAB SCENARIO MANAGER ============ -->
+  <div class="tab-panel" id="tscn">
+    <div class="panel"><div class="panel-head"><span>السيناريو النشط</span><span>Active Scenario</span></div>
+      <div class="panel-body">
+        <div class="field" style="max-width:320px;"><label>اختر السيناريو</label>
+          <select id="activeScenario"><option value="base">Base Case — الحالة الأساسية</option><option value="upside">Upside Case — تفاؤلي</option><option value="downside">Downside Case — تحفظي</option></select>
+        </div>
+      </div>
+    </div>
+    <div class="panel"><div class="panel-head"><span>جدول تعديلات السيناريو</span><span>Scenario Adjustments</span></div>
+      <div class="panel-body">
+        <table class="stmt" id="scenarioTable"></table>
+        <div class="note" style="margin-top:10px;">التعديلات دي بتتطبق فوق كل افتراضاتك الأساسية (تاب 00/01) لحظة اختيار السيناريو — مقدّرة كنسب تفاؤل/تحفظ نمطية في تمويل المشاريع الفندقية، وقابلة للتعديل بالكامل.</div>
+      </div>
+    </div>
+    <div class="kpi-row" id="scenarioKpi"></div>
+  </div>
+
+  <!-- ============ TAB SENSITIVITY ============ -->
+  <div class="tab-panel" id="tsens">
+    <div class="note">تحليل حساسية حقيقي (مش تقديري) — كل خلية في الجدولين بتاخد حساب كامل تاني للنموذج بافتراضات مُغيّرة. المحور الرأسي = صدمة الإشغال، الأفقي = صدمة سعر الفائدة.</div>
+    <div class="panel"><div class="panel-head"><span>حساسية Equity IRR</span><span>Equity IRR Sensitivity</span></div>
+      <div class="panel-body stmt-scroll"><table class="stmt" id="sensIRRTable"></table></div>
+    </div>
+    <div class="panel"><div class="panel-head"><span>حساسية أقل DSCR</span><span>Min DSCR Sensitivity</span></div>
+      <div class="panel-body stmt-scroll"><table class="stmt" id="sensDSCRTable"></table></div>
+    </div>
+  </div>
+
+  <!-- ============ TAB AUDIT ============ -->
+  <div class="tab-panel" id="taudit">
+    <div class="kpi-pro-row" id="auditKpi"></div>
+    <div class="panel"><div class="panel-head"><span>فحوصات التدقيق الآلي</span><span>Automated Model Checks</span></div>
+      <div class="panel-body" id="auditChecksBody"></div>
+    </div>
+  </div>
+
+  <footer class="foot no-print"><span data-ar="Credit Desk — نظام موحد لأغراض الاختبار قبل التقديم للبنك · جميع الافتراضات قابلة للتعديل بالكامل" data-en="Credit Desk — Unified test system before bank submission · All assumptions fully editable">Credit Desk — نظام موحد لأغراض الاختبار قبل التقديم للبنك · جميع الافتراضات قابلة للتعديل بالكامل</span><span class="mono">v1.4 — scenarios+sensitivity+audit — build 2026-07-18</span></footer>
+</div>
+
+<script>
+const el = id => document.getElementById(id);
+let LANG = 'ar';
+const LB = (ar,en) => ({ar, en});
+const RS = obj => (obj===null||obj===undefined) ? '' : (typeof obj==='object' ? (LANG==='en'?(obj.en||obj.ar):(obj.ar||obj.en)) : obj);
+function yearLabel(t){
+  const startY = +el('financingStartYear').value || 2026;
+  return startY + t - 1;
+}
+function applyStaticLang(){
+  document.documentElement.setAttribute('lang', LANG==='en'?'en':'ar');
+  document.documentElement.dir = LANG==='en' ? 'ltr' : 'rtl';
+  document.body.classList.toggle('lang-en', LANG==='en');
+  document.querySelectorAll('[data-ar][data-en]').forEach(elx=>{
+    elx.textContent = LANG==='en' ? elx.dataset.en : elx.dataset.ar;
+  });
+  document.querySelectorAll('.panel-head').forEach(ph=>{
+    const spans = ph.querySelectorAll('span');
+    if(spans.length<2) return;
+    const [a,b] = spans;
+    if(LANG==='en'){
+      a.style.cssText = 'font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--ink-500);order:2;';
+      b.style.cssText = 'font-size:13px;font-weight:600;color:var(--ink-900);text-transform:none;order:1;';
+    } else {
+      a.style.cssText=''; b.style.cssText='';
+    }
+  });
+}
+function toggleLang(){
+  LANG = LANG==='ar' ? 'en' : 'ar';
+  applyStaticLang();
+  if(typeof compute==='function') compute();
+}
+el('stamp').textContent = new Date().toISOString().slice(0,10);
+const fmt = n => { if(n===null||n===undefined||isNaN(n)) return '—';
+  const curEl = document.getElementById('displayCurrency'), fxEl = document.getElementById('fxRate');
+  const isEGP = curEl && curEl.value==='EGP';
+  const fx = isEGP ? (+((fxEl&&fxEl.value)||1)||1) : 1;
+  const v = n*fx;
+  const suffix = isEGP ? ' ج.م' : '';
+  const s=v<0?'-':''; const a=Math.abs(v);
+  if(a>=1e9) return s+(a/1e9).toFixed(2)+'B'+suffix; if(a>=1e6) return s+(a/1e6).toFixed(2)+'M'+suffix; if(a>=1e3) return s+(a/1e3).toFixed(1)+'K'+suffix; return v.toFixed(0)+suffix; };
+const pct = n => isFinite(n)? n.toFixed(2)+'%':'—';
+const x = n => isFinite(n)? n.toFixed(2)+'x':'—';
+function scoreBand(v,bands){ for(const b of bands){ if(v>=b.min) return b.score; } return bands[bands.length-1].score; }
+const RATING_BANDS = [{min:90,grade:'AAA'},{min:80,grade:'AA'},{min:70,grade:'A'},{min:60,grade:'BBB'},{min:50,grade:'BB'},{min:40,grade:'B'},{min:30,grade:'CCC'},{min:0,grade:'D'}];
+let MODEL=null;
+let hotelUSALIDetail = [];
+const PD_TABLE = [
+  {min:90, pd:0.0002}, {min:80, pd:0.0005}, {min:70, pd:0.0009}, {min:60, pd:0.0025},
+  {min:50, pd:0.010}, {min:40, pd:0.045}, {min:30, pd:0.15}, {min:0, pd:0.35},
+];
+const SCENARIO_ADJ = {
+  base:     {occAdjPts:0,  adrAdjPct:0,     capexOverrunPct:0,     rateShockPts:0},
+  upside:   {occAdjPts:3,  adrAdjPct:0.05,  capexOverrunPct:-0.03, rateShockPts:-0.5},
+  downside: {occAdjPts:-8, adrAdjPct:-0.08, capexOverrunPct:0.10,  rateShockPts:1.5},
+};
+function getScenarioAdj(){
+  const elx = document.getElementById('activeScenario');
+  const key = elx ? elx.value : 'base';
+  return SCENARIO_ADJ[key] || SCENARIO_ADJ.base;
+}
+function effectiveLoanRate(){
+  const base = +(document.getElementById('loanRate').value)||0;
+  return base + getScenarioAdj().rateShockPts;
+}
+const SCORE_GRADE_DESC = [
+  {min:90,grade:'AAA',desc:'استثنائي',descEn:'Exceptional'},{min:80,grade:'AA',desc:'قوي جدًا',descEn:'Very Strong'},{min:70,grade:'A',desc:'قوي',descEn:'Strong'},
+  {min:60,grade:'BBB',desc:'درجة استثمارية',descEn:'Investment Grade'},{min:50,grade:'BB',desc:'مضاربة',descEn:'Speculative'},{min:40,grade:'B',desc:'مخاطر ملموسة',descEn:'Notable Risk'},
+  {min:30,grade:'CCC',desc:'مخاطر مرتفعة',descEn:'High Risk'},{min:0,grade:'D',desc:'تعثر',descEn:'Default'}
+];
+
+// ---------------- Tabs ----------------
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>{p.classList.remove('active');p.classList.remove('print-active');});
+    btn.classList.add('active'); el(btn.dataset.tab).classList.add('active'); el(btn.dataset.tab).classList.add('print-active');
+  });
+});
+el('activityType').addEventListener('change', ()=>{
+  const v = el('activityType').value;
+  el('hotelRevPanel').style.display = v==='hotel'?'block':'none';
+  el('rePanel').style.display = v==='realestate'?'block':'none';
+  el('genPanel').style.display = v==='generic'?'block':'none';
+  buildHotelYearTable(); compute();
+});
+
+// ---------------- Hotel year-varying driver grid (USALI-aligned) ----------------
+const HOTEL_ROWS = [
+  {key:'occ', label:'معدل الإشغال %', seed:(t,N)=> Math.min(80, 60+t*3)},
+  {key:'adr', label:'متوسط سعر الغرفة (ADR) — نمو سنوي', seed:(t,N)=> 300*Math.pow(1.03,t-1)},
+  {key:'roomCostPct', label:'تكلفة الغرف % من إيراد الغرف', seed:(t,N)=> Math.max(20, 23-t*0.4)},
+  {key:'fbCostPct', label:'تكلفة F&B % من إيراد F&B', seed:(t,N)=> Math.max(30, 36-t*0.5)},
+  {key:'payrollPct', label:'الرواتب والأجور % من إجمالي الإيراد', seed:(t,N)=> Math.max(16, 20-t*0.4)},
+  {key:'adminPct', label:'إدارة وعمومية % من إجمالي الإيراد', seed:(t,N)=> Math.max(5, 7-t*0.2)},
+  {key:'marketingOpexPct', label:'مبيعات وتسويق % من إجمالي الإيراد', seed:(t,N)=> Math.max(3, 5-t*0.2)},
+  {key:'maintenancePct', label:'صيانة ومرافق % من إجمالي الإيراد', seed:(t,N)=> Math.max(5, 6-t*0.1)},
+  {key:'incentivePct', label:'رسوم حافز إدارة % من GOP', seed:(t,N)=> Math.min(11, 9+t*0.2)},
+  {key:'reservePct', label:'احتياطي إحلال % من الإيراد', seed:(t,N)=> Math.min(5, 1+t*0.4)},
+];
+let hotelYearData = {};
+function buildHotelYearTable(){
+  const N = Math.min(10, Math.max(2, +el('projYears').value||8));
+  HOTEL_ROWS.forEach(row=>{
+    if(!hotelYearData[row.key]) hotelYearData[row.key] = [];
+    const arr = hotelYearData[row.key];
+    while(arr.length < N) arr.push(row.seed(arr.length+1, N));
+    arr.length = N;
+  });
+  let html = `<tr><th>البند</th>`+Array.from({length:N},(_,i)=>`<th>Y${yearLabel(i+1)}</th>`).join('')+`</tr>`;
+  HOTEL_ROWS.forEach(row=>{
+    html += `<tr><td>${row.label}</td>`+hotelYearData[row.key].map((v,i)=>
+      `<td><input class="cell" type="number" step="0.1" value="${(+v).toFixed(2)}" data-row="${row.key}" data-idx="${i}" onchange="updateHotelCell(this)"></td>`
+    ).join('')+`</tr>`;
+  });
+  el('hotelYearTable').innerHTML = html;
+}
+function updateHotelCell(input){
+  hotelYearData[input.dataset.row][+input.dataset.idx] = +input.value||0;
+  compute();
+}
+el('projYears').addEventListener('input', ()=>{ buildHotelYearTable(); regeneratePeriods(); });
+buildHotelYearTable();
+
+// ---------------- CAPEX & IDC module ----------------
+let capexCategories = [
+  {key:'civil', name:'الأعمال المدنية والبنية التحتية', amount:30000000},
+  {key:'mep', name:'الميكانيكا والكهرباء (MEP)', amount:28000000},
+  {key:'fitout', name:'التشطيبات والديكور', amount:30000000},
+  {key:'oseffe', name:'OS&E و FF&E', amount:10000000},
+  {key:'design', name:'التصميم والاستشارات', amount:6000000},
+  {key:'contingency', name:'الطوارئ والاحتياطي', amount:0},
+];
+function renderCapexCatTable(){
+  const total = capexCategories.reduce((a,c)=>a+c.amount,0);
+  let html = `<tr><th>البند</th><th>القيمة (M$)</th><th>% من الإنشاء</th><th>تعديل</th></tr>`;
+  capexCategories.forEach((c,i)=>{
+    html += `<tr><td>${c.name}</td><td>${fmt(c.amount)}</td><td>${pct(total? c.amount/total*100:0)}</td>
+      <td><input class="cat-table-input" type="number" value="${c.amount}" onchange="capexCategories[${i}].amount=+this.value||0;compute()"></td></tr>`;
+  });
+  html += `<tr class="total"><td>إجمالي تكلفة الإنشاء</td><td>${fmt(total)}</td><td>100%</td><td></td></tr>`;
+  el('capexCatTable').innerHTML = html;
+}
+renderCapexCatTable();
+
+function computeCapexIDC(){
+  const scn = getScenarioAdj();
+  const constructionCost = capexCategories.reduce((a,c)=>a+c.amount,0) * (1+scn.capexOverrunPct);
+  const quarters = Math.max(1, +el('constructionQuarters').value||8);
+  const graceQuarters = Math.max(0, +el('graceQuartersInput').value||0);
+  const totalCapQuarters = quarters+graceQuarters;
+  const debtPct = (+el('targetDebtPct').value||0)/100;
+  const equityPct = 1-debtPct;
+  const rate = effectiveLoanRate()/100;
+  const qRate = rate/4;
+
+  let totalInvestment = constructionCost; // initial guess, resolved iteratively (IDC depends on debt which depends on total investment)
+  let idcTotal=0, debt=0, equity=0, schedule=[];
+  for(let iter=0; iter<8; iter++){
+    debt = totalInvestment*debtPct;
+    equity = totalInvestment*equityPct;
+    const drawPerQ = debt/quarters;
+    const equityPerQ = equity/quarters;
+    let cumDraw=0, cumIDC=0, cumEquity=0;
+    schedule = [];
+    for(let q=1;q<=totalCapQuarters;q++){
+      const isDrawQ = q<=quarters;
+      const openingBalance = cumDraw+cumIDC;
+      const drawnThisQ = isDrawQ? drawPerQ : 0;
+      const equityThisQ = isDrawQ? equityPerQ : 0; // تمويل ذاتي متزامن (Pari-Passu) مع سحب الدين لنفس النسبة كل ربع
+      cumDraw += drawnThisQ;
+      cumEquity += equityThisQ;
+      const closingBeforeIDC = cumDraw+cumIDC;
+      const avgBal = (openingBalance+closingBeforeIDC)/2;
+      const idcQ = avgBal*qRate;
+      cumIDC += idcQ;
+      schedule.push({q, phase:isDrawQ?'سحب':'سماح', drawn:drawnThisQ, pctOfLoan: debt? drawnThisQ/debt:0, cumDraw, equityThisQ, cumEquity, idcQ, cumIDC});
+    }
+    idcTotal = cumIDC;
+    totalInvestment = constructionCost+idcTotal;
+  }
+  const loanStartYear = Math.max(1, Math.ceil(totalCapQuarters/4)+1);
+  return {constructionCost, quarters, graceQuarters, totalCapQuarters, debtPct, equityPct, rate, debt, equity, idcTotal, totalInvestment, schedule, loanStartYear};
+}
+
+function renderCapexIDC(){
+  renderCapexCatTable();
+  const r = computeCapexIDC();
+  el('targetEquityPctDisplay').value = pct(r.equityPct*100);
+  el('totalCapPeriodDisplay').value = r.totalCapQuarters+' ربع ('+(r.totalCapQuarters/4).toFixed(1)+' سنة)';
+  el('loanStartYearDisplay').value = 'Y'+yearLabel(r.loanStartYear)+' (سنة رقم '+r.loanStartYear+')';
+
+  el('capexKpi').innerHTML = `
+    <div class="kpi-pro c-positive"><div class="label">حصة المالك (Equity)</div><div class="value mono">${fmt(r.equity)}</div><div class="sub">${pct(r.equityPct*100)} من إجمالي الاستثمار — تُحقن بالتزامن مع سحب الدين</div></div>
+    <div class="kpi-pro c-ink"><div class="label">إجمالي الاستثمار</div><div class="value mono">${fmt(r.totalInvestment)}</div><div class="sub">تكلفة إنشاء + IDC</div></div>
+    <div class="kpi-pro c-brass"><div class="label">الفوائد المرسملة (IDC)</div><div class="value mono">${fmt(r.idcTotal)}</div><div class="sub">${r.quarters} سحب + ${r.graceQuarters} سماح = ${r.totalCapQuarters} ربع</div></div>
+    <div class="kpi-pro"><div class="label">تكلفة الإنشاء</div><div class="value mono">${fmt(r.constructionCost)}</div></div>
+  `;
+
+  let html = `<tr><th>الربع</th><th>المرحلة</th><th>سحب الدين</th><th>% من القرض</th><th>تراكمي الدين</th><th>تمويل ذاتي (Pari-Passu)</th><th>تراكمي التمويل الذاتي</th><th>نسبة الدين الفعلية</th><th>IDC ربعي</th><th>IDC تراكمي</th></tr>`;
+  r.schedule.forEach(s=>{
+    const cumTotal = s.cumDraw+s.cumEquity;
+    const actualDebtPct = cumTotal? s.cumDraw/cumTotal : 0;
+    html += `<tr><td>Q${s.q}</td><td>${s.phase}</td><td>${s.drawn?fmt(s.drawn):'—'}</td><td>${s.pctOfLoan?pct(s.pctOfLoan*100):'—'}</td><td>${fmt(s.cumDraw)}</td><td>${s.equityThisQ?fmt(s.equityThisQ):'—'}</td><td>${fmt(s.cumEquity)}</td><td class="mono">${pct(actualDebtPct*100)}</td><td>${fmt(s.idcQ)}</td><td>${fmt(s.cumIDC)}</td></tr>`;
+  });
+  el('idcTable').innerHTML = html;
+  return r;
+}
+
+function syncCapexToLoan(){
+  const r = computeCapexIDC();
+  const autoTrancheIdx = tranches.findIndex(t=>t.auto);
+  if(autoTrancheIdx>=0) tranches[autoTrancheIdx].amount = r.debt;
+  else tranches.unshift({name:'دين تمويل الإنشاء (من CAPEX/IDC — تلقائي)', amount:r.debt, auto:true});
+
+  const autoCapIdx = capInterest.findIndex(t=>t.auto);
+  if(autoCapIdx>=0) capInterest[autoCapIdx].amount = r.idcTotal;
+  else capInterest.unshift({name:'فوائد مرسملة (من IDC — تلقائي)', amount:r.idcTotal, auto:true});
+
+  el('loanStartYear').value = r.loanStartYear;
+  return r;
+}
+
+// ---------------- Loan module ----------------
+let tranches = [];
+let capInterest = [];
+let periods = []; // {repay_pct}
+
+function renderTranches(){
+  let html='';
+  tranches.forEach((t,i)=>{
+    if(t.auto){
+      html += `<div class="row3" style="align-items:end;margin-bottom:8px;background:var(--brass-soft);padding:6px;">
+        <div class="field"><label>شريحة تلقائية</label><div style="padding:7px 0;font-size:12px;">${t.name}</div></div>
+        <div class="field"><label>المبلغ (محسوب من تاب CAPEX/IDC)</label><div class="mono" style="padding:7px 0;">${fmt(t.amount)}</div></div>
+        <div style="font-size:11px;color:var(--ink-500);align-self:center;">عدّل من تاب 01B</div>
+      </div>`;
+      return;
+    }
+    html += `<div class="row3" style="align-items:end;margin-bottom:8px;">
+      <div class="field"><label>${i===0?'اسم الشريحة':''}</label><input value="${t.name}" onchange="tranches[${i}].name=this.value" style="direction:rtl;text-align:right;font-family:'IBM Plex Sans Arabic'"></div>
+      <div class="field"><label>${i===0?'المبلغ':''}</label><input type="number" value="${t.amount}" onchange="tranches[${i}].amount=+this.value||0;compute()"></div>
+      <button class="btn no-print" onclick="tranches.splice(${i},1);renderTranches();compute()">حذف</button>
+    </div>`;
+  });
+  capInterest.forEach((t,i)=>{
+    if(t.auto){
+      html += `<div class="row3" style="align-items:end;margin-bottom:8px;background:var(--brass-soft);padding:6px;">
+        <div class="field"><label>فائدة مرسملة تلقائية</label><div style="padding:7px 0;font-size:12px;">${t.name}</div></div>
+        <div class="field"><label>المبلغ (محسوب من تاب CAPEX/IDC)</label><div class="mono" style="padding:7px 0;">${fmt(t.amount)}</div></div>
+        <div style="font-size:11px;color:var(--ink-500);align-self:center;">عدّل من تاب 01B</div>
+      </div>`;
+      return;
+    }
+    html += `<div class="row3" style="align-items:end;margin-bottom:8px;background:var(--paper-50);padding:6px;">
+      <div class="field"><label>فائدة مرسملة</label><input value="${t.name}" onchange="capInterest[${i}].name=this.value" style="direction:rtl;text-align:right;font-family:'IBM Plex Sans Arabic'"></div>
+      <div class="field"><label>المبلغ</label><input type="number" value="${t.amount}" onchange="capInterest[${i}].amount=+this.value||0;compute()"></div>
+      <button class="btn no-print" onclick="capInterest.splice(${i},1);renderTranches();compute()">حذف</button>
+    </div>`;
+  });
+  el('tranchesList').innerHTML = html;
+}
+function addTranche(){ tranches.push({name:'شريحة جديدة', amount:0}); renderTranches(); }
+function addCapInterest(){ capInterest.push({name:'فائدة مرسملة', amount:0}); renderTranches(); }
+renderTranches();
+
+function loanFxFactor(){
+  const curEl = document.getElementById('loanCurrency');
+  if(!curEl || curEl.value!=='EGP') return 1;
+  const fx = +((document.getElementById('fxRate')||{}).value)||1;
+  return fx>0 ? 1/fx : 1;
+}
+function totalPrincipal(){
+  const fx = loanFxFactor();
+  const sumWithFx = arr => arr.reduce((a,t)=> a + (t.auto ? t.amount : t.amount*fx), 0);
+  return sumWithFx(tranches) + sumWithFx(capInterest);
+}
+
+function regeneratePeriods(){
+  const n = Math.max(1, +el('numPeriods').value||1);
+  const even = 100/n;
+  periods = Array.from({length:n}, ()=> ({repay_pct: even/100}));
+  renderRepayTable();
+  compute();
+}
+regeneratePeriods();
+
+function computeLoanFullSchedule(){
+  const rate = effectiveLoanRate()/100;
+  const freqMonths = +el('loanFreq').value;
+  const periodsPerYear = 12/freqMonths;
+  const startYear = +el('loanStartYear').value||1;
+  const principal = totalPrincipal();
+  let balance = principal;
+  const rows = [];
+  periods.forEach((p,i)=>{
+    const opening = balance;
+    const principalPay = principal*p.repay_pct;
+    const interest = opening*(rate/periodsPerYear);
+    const closing = opening-principalPay;
+    const projYear = startYear + Math.floor(i/periodsPerYear);
+    rows.push({idx:i, projYear, opening, principalPay, interest, closing});
+    balance = closing;
+  });
+  return {rows, principal, rate, periodsPerYear};
+}
+
+function renderRepayTable(){
+  const sched = computeLoanFullSchedule();
+  let html = `<tr><th>#</th><th>سنة المشروع</th><th>% السداد (قابل للتعديل)</th><th>الرصيد الافتتاحي</th><th>سداد أصل (قسط)</th><th>فائدة</th><th>إجمالي القسط</th><th>الرصيد الختامي</th></tr>`;
+  sched.rows.forEach((r,i)=>{
+    html += `<tr><td>${i+1}</td><td>Y${yearLabel(r.projYear)}</td>
+      <td><input class="cell" type="number" step="0.5" value="${(periods[i]? periods[i].repay_pct*100:0).toFixed(2)}" data-idx="${i}" onchange="updateRepayPct(this)"></td>
+      <td>${fmt(r.opening)}</td><td>${fmt(r.principalPay)}</td><td>${fmt(r.interest)}</td><td><b>${fmt(r.principalPay+r.interest)}</b></td><td>${fmt(r.closing)}</td></tr>`;
+  });
+  el('repayTable').innerHTML = html;
+}
+function updateRepayPct(input){ periods[+input.dataset.idx].repay_pct = (+input.value||0)/100; compute(); }
+
+// ---------------- File import ----------------
+el('fileInput').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = ev=>{
+    try{
+      const db = JSON.parse(ev.target.result);
+      if(db.loan_setup){
+        tranches = Object.entries(db.loan_setup).filter(([k,v])=>/Drawdown|Existing Balance/.test(k)).map(([k,v])=>({name:k,amount:v}));
+        capInterest = Object.entries(db.loan_setup).filter(([k,v])=>/Capitalized Interest/.test(k)).map(([k,v])=>({name:k,amount:v}));
+        if(db.loan_setup['Annual Interest Rate']) el('loanRate').value = (db.loan_setup['Annual Interest Rate']*100).toFixed(2);
+        renderTranches();
+      }
+      if(db.repayment_schedule && db.repayment_schedule.length){
+        periods = db.repayment_schedule.map(p=>({repay_pct:p.repay_pct}));
+        el('numPeriods').value = periods.length;
+        renderRepayTable();
+      }
+      if(db.global_assumptions){
+        const ga = db.global_assumptions;
+        if(ga['Keys — Year 1 (2027)']) el('h_keysY1').value = ga['Keys — Year 1 (2027)'];
+        if(ga['Keys — Year 2 onward']) el('h_keysY2').value = ga['Keys — Year 2 onward'];
+      }
+      compute();
+      alert('تم استيراد قاعدة البيانات بنجاح.');
+    }catch(err){ alert('ملف JSON غير صالح: '+err.message); }
+  };
+  reader.readAsText(f);
+});
+
+// ---------------- Revenue engines ----------------
+function computeRevenueEbitda(N){
+  const type = el('activityType').value;
+  const revenue=[], ebitda=[];
+  hotelUSALIDetail = [];
+  const scn = getScenarioAdj();
+  if(type==='hotel'){
+    const keys1=+el('h_keysY1').value||0, keys2=+el('h_keysY2').value||0, grossUp=+el('h_grossUp').value||1;
+    const fbPct=(+el('h_fbPct').value||0)/100, otherPct=(+el('h_otherPct').value||0)/100;
+    const otherCostPct=(+el('h_otherCostPct').value||0)/100;
+    const mktFee=(+el('h_mktFee').value||0)/100;
+    const baseMgmt=(+el('h_baseMgmt').value||0)/100, licFee=(+el('h_licFee').value||0)/100;
+    for(let t=1;t<=N;t++){
+      const keys = t===1? keys1: keys2;
+      const occ=Math.max(0.05,((hotelYearData.occ[t-1]||0)+scn.occAdjPts)/100), adr=(hotelYearData.adr[t-1]||0)*(1+scn.adrAdjPct);
+      const roomsNet = keys*365*occ*adr, roomsGross = roomsNet*grossUp;
+      const roomsSold = keys*365*occ;
+      const revPAR = keys? roomsGross/(keys*365) : 0;
+      const fb = roomsGross*fbPct, other = roomsGross*otherPct;
+      const totalRev = roomsGross+fb+other;
+      const roomCostPct=(hotelYearData.roomCostPct[t-1]||0)/100;
+      const fbCostPct=(hotelYearData.fbCostPct[t-1]||0)/100;
+      const payrollPct=(hotelYearData.payrollPct[t-1]||0)/100;
+      const adminPct=(hotelYearData.adminPct[t-1]||0)/100;
+      const marketingOpexPct=(hotelYearData.marketingOpexPct[t-1]||0)/100;
+      const maintenancePct=(hotelYearData.maintenancePct[t-1]||0)/100;
+      const incentivePct=(hotelYearData.incentivePct[t-1]||0)/100, reservePct=(hotelYearData.reservePct[t-1]||0)/100;
+      const roomCost = roomsGross*roomCostPct, fbCost = fb*fbCostPct, otherCost = other*otherCostPct;
+      const payroll = totalRev*payrollPct, admin = totalRev*adminPct, mktOpex = totalRev*marketingOpexPct, maint = totalRev*maintenancePct;
+      const mkt = totalRev*mktFee, mgmt = totalRev*baseMgmt, lic = totalRev*licFee;
+      const totalExpenses = roomCost+fbCost+otherCost+payroll+admin+mktOpex+maint+mkt+mgmt+lic;
+      const gop = totalRev-totalExpenses;
+      const incentive = gop*incentivePct, reserve = totalRev*reservePct;
+      const noi = gop-incentive-reserve;
+      revenue.push(totalRev); ebitda.push(noi);
+      hotelUSALIDetail.push({t, occ, adr, roomsSold, revPAR, roomsGross, fb, other, totalRev,
+        roomCost, fbCost, otherCost, payroll, admin, mktOpex, maint, mkt, mgmt, lic, totalExpenses,
+        gop, gopMargin: gop/(totalRev||1), incentive, reserve, noi, noiMargin: noi/(totalRev||1)});
+    }
+  } else if(type==='realestate'){
+    const area=+el('r_area').value||0, price1=+el('r_price1').value||0, absorp=(+el('r_absorption').value||0)/100;
+    const esc=(+el('r_escalation').value||0)/100, rentArea=+el('r_rentArea').value||0, rent1=+el('r_rent1').value||0;
+    const cogsPct=(+el('r_cogsPct').value||0)/100, opexPct=(+el('r_opexPct').value||0)/100;
+    let cumSold=0;
+    for(let t=1;t<=N;t++){
+      const price=price1*Math.pow(1+esc,t-1);
+      let soldThisYear = Math.min(absorp, 1-cumSold); if(soldThisYear<0) soldThisYear=0; cumSold+=soldThisYear;
+      const salesRev = area*soldThisYear*price;
+      const rentRev = rentArea*rent1*Math.pow(1+esc*0.5,t-1);
+      const rev = salesRev+rentRev;
+      revenue.push(rev); ebitda.push(rev-rev*cogsPct-rev*opexPct);
+    }
+  } else {
+    const base=+el('g_base').value||0, g=(+el('g_growth').value||0)/100, cogsPct=(+el('g_cogsPct').value||0)/100, opexPct=(+el('g_opexPct').value||0)/100;
+    for(let t=1;t<=N;t++){ const rev=base*Math.pow(1+g,t-1); revenue.push(rev); ebitda.push(rev-rev*cogsPct-rev*opexPct); }
+  }
+  return {revenue, ebitda};
+}
+
+// ---------------- Master model ----------------
+function computeModel(){
+  syncCapexToLoan();
+  const N = Math.min(10, Math.max(2, +el('projYears').value||8));
+  const capexIDC = computeCapexIDC();
+  const operatingStartYear = Math.min(N+1, capexIDC.loanStartYear); // أول سنة تشغيل وسداد معًا
+
+  // تجميع جدول السحب الربعي (تمويل بنكي + ذاتي + فوائد مرسملة) سنويًا لسنوات الإنشاء
+  const annualConstruction = {};
+  capexIDC.schedule.forEach(s=>{
+    const projYear = Math.ceil(s.q/4);
+    annualConstruction[projYear] = annualConstruction[projYear] || {debtDrawn:0, equityInjected:0, idcAdded:0};
+    annualConstruction[projYear].debtDrawn += s.drawn;
+    annualConstruction[projYear].equityInjected += s.equityThisQ;
+    annualConstruction[projYear].idcAdded += s.idcQ;
+  });
+
+  const operatingYearsCount = Math.max(0, N-operatingStartYear+1);
+  const {revenue, ebitda} = computeRevenueEbitda(operatingYearsCount);
+
+  const capexPct=(+el('capexPct').value||0)/100, deprRate=(+el('deprRate').value||0)/100, taxRate=(+el('taxRate').value||0)/100;
+  const arDays=+el('arDays').value||0, invDays=+el('invDays').value||0, apDays=+el('apDays').value||0, divPayout=(+el('divPayout').value||0)/100;
+
+  const cash0=+el('cash0').value||0, ar0=+el('ar0').value||0, inv0=+el('inv0').value||0, otherCA0=+el('otherCA0').value||0;
+  const ppe0=+el('ppe0').value||0, otherNCA0=+el('otherNCA0').value||0, ap0=+el('ap0').value||0, otherCL0=+el('otherCL0').value||0;
+  const otherDebt0=+el('otherDebt0').value||0;
+  let equity0In=+el('equity0').value||0;
+  const totalAssets0=cash0+ar0+inv0+otherCA0+ppe0+otherNCA0;
+  const balancedEquity0 = totalAssets0-(ap0+otherCL0+otherDebt0);
+  const trueEquity0 = balancedEquity0; // دائمًا نُرجّح التوازن المحاسبي؛ أي فرق عن رقمك المُدخل يُعرض كتنبيه بدل ما يتراكم في كل السنين
+  const equity0Mismatch = equity0In>0 ? (equity0In-balancedEquity0) : 0;
+
+  const loanSched = computeLoanFullSchedule();
+  const annualLoan = {};
+  loanSched.rows.forEach(r=>{
+    annualLoan[r.projYear] = annualLoan[r.projYear] || {interest:0, principal:0, closing:r.closing};
+    annualLoan[r.projYear].interest += r.interest;
+    annualLoan[r.projYear].principal += r.principalPay;
+    annualLoan[r.projYear].closing = r.closing;
+  });
+  const totalFacilityYears = periods.length / loanSched.periodsPerYear;
+  if(totalFacilityYears>10){ el('warnBanner').className='warn-banner show'; el('warnBanner').textContent=`تنبيه: مدة جدول السداد = ${totalFacilityYears.toFixed(1)} سنة — تجاوزت 10 سنوات.`; }
+  else { el('warnBanner').className='warn-banner'; }
+
+  const companyOtherRevY1=+el('companyOtherRevY1').value||0, companyOtherRevGrowth=(+el('companyOtherRevGrowth').value||0)/100;
+  const companyGAY1=+el('companyGAY1').value||0, companyGAGrowth=(+el('companyGAGrowth').value||0)/100;
+
+  let ppeOpen=ppe0, cipOpen=0, facilityDebtOpen=0, cashOpen=cash0, arOpen=ar0, invOpen=inv0, apOpen=ap0, equityOpen=trueEquity0;
+  const years=[];
+  for(let t=1;t<=N;t++){
+    const isConstruction = t < operatingStartYear;
+    const isTransition = t === operatingStartYear;
+    const opIdx = t - operatingStartYear; // فهرس سنة التشغيل (0-based)، صالح لو مش سنة إنشاء
+
+    const rev = isConstruction? 0 : (revenue[opIdx]||0);
+    const hotelNOI = isConstruction? 0 : (ebitda[opIdx]||0);
+    const otherRevenue = isConstruction? 0 : companyOtherRevY1*Math.pow(1+companyOtherRevGrowth, opIdx);
+    const totalCompanyRevenue = hotelNOI+otherRevenue;
+    const companyGA = companyGAY1*Math.pow(1+companyGAGrowth, t-1);
+    const ebd = totalCompanyRevenue-companyGA;
+
+    const constr = annualConstruction[t] || {debtDrawn:0, equityInjected:0, idcAdded:0};
+
+    const depreciationBase = isTransition ? (ppeOpen+cipOpen) : ppeOpen;
+    const depreciation = depreciationBase*deprRate;
+    const ebit = ebd-depreciation;
+
+    const la = annualLoan[t] || {interest:0, principal:0, closing:null};
+    const interest = isConstruction? 0 : la.interest; // فوائد الإنشاء مرسملة (غير مصروفة) — تُضاف لمشروعات تحت التنفيذ بدل قائمة الدخل
+    const ebt = ebit-interest;
+    const tax = Math.max(0,ebt)*taxRate;
+    const netIncome = ebt-tax;
+
+    let capex, ppeClose, cipClose;
+    if(isConstruction){
+      capex = constr.debtDrawn+constr.equityInjected; // إنفاق نقدي فعلي على الإنشاء (يستبعد الفوائد المرسملة غير النقدية)
+      cipClose = cipOpen + constr.debtDrawn + constr.equityInjected + constr.idcAdded;
+      ppeClose = Math.max(0, ppeOpen-depreciation);
+    } else if(isTransition){
+      capex = rev*capexPct;
+      ppeClose = (ppeOpen+cipOpen)+capex-depreciation;
+      cipClose = 0;
+    } else {
+      capex = rev*capexPct;
+      ppeClose = ppeOpen+capex-depreciation;
+      cipClose = 0;
+    }
+
+    const arClose = rev*(arDays/365), invClose = ebd>0? (rev-ebd)*(invDays/365) : Math.max(0,rev)*0.1*(invDays/365), apClose = Math.max(0,rev-ebd)*(apDays/365);
+    const dWC = (arClose-arOpen)+(invClose-invOpen)-(apClose-apOpen);
+    const cfo0 = netIncome+depreciation-dWC;
+    const cfi = -capex;
+
+    let debtDraw, debtRepay, facilityDebtClose;
+    if(isConstruction){
+      debtDraw = constr.debtDrawn; debtRepay = 0;
+      facilityDebtClose = facilityDebtOpen+constr.debtDrawn+constr.idcAdded;
+    } else {
+      debtDraw = 0; debtRepay = la.principal;
+      facilityDebtClose = la.closing!=null ? la.closing : facilityDebtOpen;
+    }
+    // شرط بنكي قياسي: ممنوع توزيع أي أرباح على المساهمين طالما التمويل قائم (لسه مسدّدش بالكامل) أو أثناء الإنشاء
+    const loanFullyRepaid = facilityDebtClose<=1;
+    const dividends = (!isConstruction && loanFullyRepaid) ? Math.max(0,netIncome)*divPayout : 0;
+    const cfo = cfo0;
+    let cff;
+    if(isConstruction){ cff = constr.debtDrawn+constr.equityInjected-dividends; }
+    else { cff = -debtRepay-dividends; }
+    let netCF = cfo+cfi+cff;
+    let cashClose = cashOpen+netCF;
+    // دعم ذاتي تلقائي من المالك: أي عجز نقدي (سواء مصاريف فترة الإنشاء أو خسائر تشغيل مبكرة) يُغطّى بتمويل ذاتي إضافي بدل ما تظهر النقدية بالسالب
+    const equitySupport = cashClose<0 ? -cashClose : 0;
+    if(equitySupport>0){ cff += equitySupport; netCF += equitySupport; cashClose += equitySupport; }
+    const equityClose = equityOpen+netIncome-dividends+(isConstruction? constr.equityInjected:0)+equitySupport;
+    const facilityBal = facilityDebtClose;
+    const totalDebt = otherDebt0+facilityBal;
+    const totalAssets = cashClose+arClose+invClose+otherCA0+ppeClose+otherNCA0+cipClose;
+    const totalLiabEq = apClose+otherCL0+totalDebt+equityClose;
+
+    years.push({t, isConstruction, revenue:rev, hotelNOI, otherRevenue, companyGA, totalCompanyRevenue, ebitda:ebd, depreciation, ebit, interest, ebt, tax, netIncome, capex, ppeOpen, ppeClose, cipOpen, cipClose, equitySupport,
+      arOpen, arClose, invOpen, invClose, apOpen, apClose, dWC, dividends, cfo, cfi, cff, netCF, cashOpen, cashClose,
+      equityOpen, equityClose, equity0: trueEquity0, facilityBal, totalDebt, totalAssets, totalLiabEq, checkDiff: totalAssets-totalLiabEq, debtRepay, debtDraw});
+    ppeOpen=ppeClose; cipOpen=cipClose; facilityDebtOpen=facilityDebtClose; cashOpen=cashClose; arOpen=arClose; invOpen=invClose; apOpen=apClose; equityOpen=equityClose;
+  }
+
+  // الجزء المتداول من القرض طويل الأجل (CPLTD) = سداد أصل مجدول للسنة القادمة
+  for(let i=0;i<years.length;i++){
+    years[i].cpltd = i<years.length-1 ? years[i+1].debtRepay : years[i].debtRepay;
+    years[i].ltdNonCurrent = Math.max(0, years[i].facilityBal - years[i].cpltd);
+  }
+
+  const rf=(+el('rf').value||0)/100, mrp=(+el('mrp').value||0)/100, beta=+el('beta').value||0, terminalG=(+el('terminalG').value||0)/100;
+  const costEquity=rf+beta*mrp, costDebtAT=loanSched.rate*(1-taxRate);
+  const we=trueEquity0/(trueEquity0+otherDebt0+loanSched.principal||1), wd=1-we;
+  const wacc=we*costEquity+wd*costDebtAT;
+  const fcf = years.map(y=> y.ebit*(1-taxRate)+y.depreciation-y.capex-y.dWC);
+  const pvFcf = fcf.map((f,i)=> f/Math.pow(1+wacc,i+1));
+  const tv = (fcf[N-1]*(1+terminalG))/((wacc-terminalG)||0.0001);
+  const pvTv = tv/Math.pow(1+wacc,N);
+  const ev = pvFcf.reduce((a,b)=>a+b,0)+pvTv;
+  const netDebt0 = otherDebt0-cash0;
+  const equityValue = ev-netDebt0;
+
+  MODEL = {N, years, loanSched, annualLoan, totalFacilityYears, wacc, costEquity, costDebtAT, we, wd, fcf, pvFcf, tv, pvTv, ev, equityValue, netDebt0, taxRate,
+    dealName: el('dealName').value, activityType: el('activityType').value, principal: loanSched.principal, allInRate: loanSched.rate,
+    cash0, ar0, inv0, otherCA0, ppe0, otherNCA0, ap0, otherCL0, otherDebt0, totalAssets0, trueEquity0, operatingStartYear, equity0Mismatch};
+  return MODEL;
+}
+
+function ratingFor(leverage, coverage, currentRatio, ebitdaMargin, roe){
+  const sLev = scoreBand(-leverage, [{min:-1,score:100},{min:-2,score:88},{min:-3,score:75},{min:-4,score:60},{min:-5,score:45},{min:-6,score:30},{min:-999,score:12}]);
+  const sCov = scoreBand(coverage, [{min:8,score:100},{min:6,score:88},{min:4,score:75},{min:3,score:60},{min:2,score:45},{min:1,score:28},{min:-999,score:10}]);
+  const sCur = scoreBand(currentRatio, [{min:2,score:100},{min:1.5,score:85},{min:1.2,score:70},{min:1.0,score:55},{min:0.8,score:35},{min:-999,score:15}]);
+  const sMar = scoreBand(ebitdaMargin, [{min:0.25,score:100},{min:0.20,score:85},{min:0.15,score:70},{min:0.10,score:55},{min:0.05,score:35},{min:-999,score:15}]);
+  const sRoe = scoreBand(roe, [{min:0.20,score:100},{min:0.15,score:85},{min:0.10,score:70},{min:0.05,score:55},{min:0,score:35},{min:-999,score:10}]);
+  const composite = sLev*0.30+sCov*0.25+sCur*0.15+sMar*0.15+sRoe*0.15;
+  return {composite, band: RATING_BANDS.find(b=>composite>=b.min)};
+}
+
+function renderStmt(tableId, rows){
+  let html = `<tr><th>${LANG==='en'?'Item':'البيان'}</th>`+MODEL.years.map(y=>`<th>Y${yearLabel(y.t)}</th>`).join('')+`</tr>`;
+  rows.forEach(r=>{
+    if(r.section){ html += `<tr class="section"><td colspan="${MODEL.N+1}">${RS(r.section)}</td></tr>`; return; }
+    html += `<tr class="${r.total?'total':''} ${r.check?'check':''}"><td>${RS(r.label)}</td>`+r.values.map(v=>`<td>${fmt(v)}</td>`).join('')+`</tr>`;
+  });
+  el(tableId).innerHTML = html;
+}
+
+function renderBSWithYear0(m, rows){
+  const y0Label = LANG==='en' ? 'Y0 (Pre-Financing)' : 'سنة الأساس (قبل التمويل)';
+  let html = `<tr><th>${LANG==='en'?'Item':'البيان'}</th><th style="background:var(--brass-soft);">${y0Label}</th>`+m.years.map(y=>`<th>Y${yearLabel(y.t)}</th>`).join('')+`</tr>`;
+  rows.forEach(r=>{
+    if(r.section){ html += `<tr class="section"><td colspan="${m.N+2}">${RS(r.section)}</td></tr>`; return; }
+    const y0cell = r.y0!==undefined ? `<td style="background:var(--paper-50);">${fmt(r.y0)}</td>` : '<td>—</td>';
+    html += `<tr class="${r.total?'total':''} ${r.check?'check':''}"><td>${RS(r.label)}</td>${y0cell}`+r.values.map(v=>`<td>${fmt(v)}</td>`).join('')+`</tr>`;
+  });
+  el('bsTable').innerHTML = html;
+}
+
+function compute(){
+  renderCapexIDC();
+  const m = computeModel(); const N=m.N;
+  const mismatchNote = el('equity0MismatchNote');
+  if(Math.abs(m.equity0Mismatch)>1){
+    mismatchNote.innerHTML = `<div class="note" style="margin-top:10px;border-inline-start-color:var(--negative);">⚠ ${LANG==='en'?'The equity value you entered manually differs by':'قيمة حقوق الملكية اللي دخّلتها يدويًا مختلفة بمقدار'} <b class="mono">${fmt(Math.abs(m.equity0Mismatch))}</b> ${LANG==='en'?'from the amount required to balance your other Year-0 figures. The system uses the balanced figure automatically so the balance sheet stays correct every year — please review your real accounts (e.g. other assets/liabilities categories not captured here) to reconcile this gap.':'عن القيمة المطلوبة لتوازن باقي أرقام سنة الأساس. النظام بيستخدم القيمة المتوازنة تلقائيًا عشان الميزانية تفضل صح في كل سنة — راجع حساباتك الحقيقية (زي بنود أصول/خصوم تانية مش موجودة في النظام) عشان تقفل الفرق ده.'}</div>`;
+  } else {
+    mismatchNote.innerHTML = '';
+  }
+  renderTranches();
+  renderRepayTable();
+
+  renderStmt('isTable', [
+    {section:LB('إيرادات الشركة المالكة','Owning Company Revenue')},
+    {label:LB('ربح تشغيل الفندق (حصة المالك)','Hotel Operating Profit (Owner Share)'), values:m.years.map(y=>y.hotelNOI)},
+    {label:LB('إيرادات أخرى (إيجارات وغيرها)','Other Revenue (Rent, etc.)'), values:m.years.map(y=>y.otherRevenue)},
+    {label:LB('إجمالي إيرادات الشركة المالكة','Total Owning Company Revenue'), total:true, values:m.years.map(y=>y.totalCompanyRevenue)},
+    {section:LB('مصروفات الشركة المالكة','Owning Company Expenses')},
+    {label:LB('مصروفات إدارية وعمومية','General & Administrative Expenses'), values:m.years.map(y=>-y.companyGA)},
+    {label:LB('EBITDA','EBITDA'), total:true, values:m.years.map(y=>y.ebitda)},
+    {label:LB('إهلاك','Depreciation'), values:m.years.map(y=>-y.depreciation)},
+    {label:LB('EBIT','EBIT'), values:m.years.map(y=>y.ebit)},
+    {label:LB('مصروف الفوائد التمويلية','Interest Expense'), values:m.years.map(y=>-y.interest)},
+    {label:LB('الربح قبل الضريبة','Earnings Before Tax'), values:m.years.map(y=>y.ebt)},
+    {label:LB('الضريبة','Income Tax'), values:m.years.map(y=>-y.tax)},
+    {label:LB('صافي الربح','Net Profit'), total:true, values:m.years.map(y=>y.netIncome)},
+  ]);
+  renderBSWithYear0(m, [
+    {section:LB('الأصول غير المتداولة','Non-Current Assets')},
+    {label:LB('صافي الأصول الثابتة','Net Fixed Assets'), y0:m.ppe0, values:m.years.map(y=>y.ppeClose)},
+    {label:LB('مشروعات تحت التنفيذ (تمويل بنكي + ذاتي + فوائد مرسملة)','Projects Under Development (CIP)'), y0:0, values:m.years.map(y=>y.cipClose)},
+    {label:LB('أصول غير متداولة أخرى','Other Non-Current Assets'), y0:m.otherNCA0, values:m.years.map(()=>+el('otherNCA0').value||0)},
+    {label:LB('إجمالي الأصول غير المتداولة','Total Non-Current Assets'), y0:m.ppe0+m.otherNCA0, values:m.years.map(y=>y.ppeClose+y.cipClose+(+el('otherNCA0').value||0))},
+    {section:LB('الأصول المتداولة','Current Assets')},
+    {label:LB('النقدية','Cash'), y0:m.cash0, values:m.years.map(y=>y.cashClose)},
+    {label:LB('عملاء ومدينون','Accounts Receivable'), y0:m.ar0, values:m.years.map(y=>y.arClose)},
+    {label:LB('مخزون','Inventory'), y0:m.inv0, values:m.years.map(y=>y.invClose)},
+    {label:LB('أصول متداولة أخرى','Other Current Assets'), y0:m.otherCA0, values:m.years.map(()=>+el('otherCA0').value||0)},
+    {label:LB('إجمالي الأصول المتداولة','Total Current Assets'), y0:m.cash0+m.ar0+m.inv0+m.otherCA0, values:m.years.map(y=>y.cashClose+y.arClose+y.invClose+(+el('otherCA0').value||0))},
+    {label:LB('إجمالي الأصول','Total Assets'), total:true, y0:m.totalAssets0, values:m.years.map(y=>y.totalAssets)},
+    {section:LB('الخصوم المتداولة','Current Liabilities')},
+    {label:LB('موردون ودائنون','Accounts Payable'), y0:m.ap0, values:m.years.map(y=>y.apClose)},
+    {label:LB('خصوم متداولة أخرى','Other Current Liabilities'), y0:m.otherCL0, values:m.years.map(()=>+el('otherCL0').value||0)},
+    {label:LB('الجزء المتداول من القرض طويل الأجل (CPLTD)','Current Portion of LT Debt (CPLTD)'), y0:0, values:m.years.map(y=>y.cpltd)},
+    {label:LB('إجمالي الخصوم المتداولة','Total Current Liabilities'), y0:m.ap0+m.otherCL0, values:m.years.map(y=>y.apClose+(+el('otherCL0').value||0)+y.cpltd)},
+    {section:LB('الخصوم غير المتداولة','Non-Current Liabilities')},
+    {label:LB('القرض طويل الأجل (الجزء غير المتداول)','Long-Term Debt (Non-Current Portion)'), y0:m.otherDebt0, values:m.years.map(y=>y.ltdNonCurrent+y.totalDebt-y.facilityBal)},
+    {section:LB('حقوق الملكية','Shareholders Equity')},
+    {label:LB('رأس المال المدفوع (سنة الأساس)','Paid-in Capital (Base Year)'), y0:m.trueEquity0, values:m.years.map(y=>y.equity0)},
+    {label:LB('+ تمويل ذاتي متراكم مُحقن خلال الإنشاء','+ Cumulative Equity Injected During Construction'), y0:0, values:(function(){ let cum=0; return m.years.map(y=>{ if(y.isConstruction) cum += (y.equityClose-y.equityOpen-(y.netIncome-y.dividends)); return cum; }); })()},
+    {label:LB('أرباح محتجزة','Retained Earnings'), y0:0, values:m.years.map(y=>y.equityClose-y.equity0)},
+    {label:LB('إجمالي حقوق الملكية','Total Shareholders Equity'), y0:m.trueEquity0, values:m.years.map(y=>y.equityClose)},
+    {label:LB('إجمالي الخصوم وحقوق الملكية','Total Liabilities & Equity'), total:true, y0:m.totalAssets0, values:m.years.map(y=>y.totalLiabEq)},
+    {label:LB('فحص التوازن','Balance Check'), check:true, y0:0, values:m.years.map(y=>y.checkDiff)},
+  ]);
+  renderStmt('cfTable', [
+    {section:LB('تشغيلية','Operating')},
+    {label:LB('صافي الربح','Net Profit'), values:m.years.map(y=>y.netIncome)},
+    {label:LB('+ إهلاك','+ Depreciation'), values:m.years.map(y=>y.depreciation)},
+    {label:LB('التغير في رأس المال العامل','Change in Working Capital'), values:m.years.map(y=>-y.dWC)},
+    {label:LB('صافي التدفق التشغيلي','Net Operating Cash Flow'), total:true, values:m.years.map(y=>y.cfo)},
+    {section:LB('استثمارية','Investing')},
+    {label:LB('إنفاق رأسمالي','Capital Expenditure'), values:m.years.map(y=>-y.capex)},
+    {section:LB('تمويلية','Financing')},
+    {label:LB('سحب التمويل البنكي (فترة الإنشاء)','Bank Debt Drawdown (Construction)'), values:m.years.map(y=>y.debtDraw)},
+    {label:LB('تمويل ذاتي أساسي مُحقن (فترة الإنشاء — Pari-Passu)','Base Equity Injected (Construction — Pari-Passu)'), values:m.years.map(y=>y.isConstruction? (y.cff-y.debtDraw+y.dividends-y.equitySupport) : 0)},
+    {label:LB('دعم ذاتي إضافي (لتغطية أي عجز نقدي)','Additional Equity Support (Cash Shortfall Coverage)'), values:m.years.map(y=>y.equitySupport)},
+    {label:LB('سداد أصل القرض','Debt Principal Repayment'), values:m.years.map(y=>-y.debtRepay)},
+    {label:LB('توزيعات أرباح','Dividends'), values:m.years.map(y=>-y.dividends)},
+    {label:LB('صافي التدفق التمويلي','Net Financing Cash Flow'), total:true, values:m.years.map(y=>y.cff)},
+    {label:LB('صافي التغير في النقدية','Net Change in Cash'), total:true, values:m.years.map(y=>y.netCF)},
+    {label:LB('رصيد النقدية الختامي','Closing Cash Balance'), values:m.years.map(y=>y.cashClose)},
+  ]);
+
+  // Loan tab
+  const loanCurr = el('loanCurrency').value;
+  el('loanKpi').innerHTML = `
+    <div class="kpi"><div class="label">إجمالي أصل القرض (بعملة العرض)</div><div class="value mono">${fmt(m.principal)}</div></div>
+    <div class="kpi"><div class="label">السعر الفعلي</div><div class="value mono">${pct(m.allInRate*100)}</div></div>
+    <div class="kpi"><div class="label">إجمالي مدة الجدول</div><div class="value mono">${m.totalFacilityYears.toFixed(1)} سنة</div></div>
+    <div class="kpi"><div class="label">عملة التمويل المُدخلة</div><div class="value mono" style="font-size:16px;">${loanCurr}${loanCurr==='EGP'?` (÷${(+el('fxRate').value||1).toFixed(2)})`:''}</div></div>
+  `;
+  el('pctSum').textContent = pct(periods.reduce((a,p)=>a+p.repay_pct,0)*100);
+
+  // Credit
+  const creditRows = m.years.map(y=>{
+    if(y.isConstruction){
+      return {t:y.t, isConstruction:true, leverage:NaN, coverage:NaN, currentRatio:NaN, dscr:NaN, composite:null, grade:'—'};
+    }
+    const leverage=y.totalDebt/(y.ebitda||1), coverage=y.ebitda/(y.interest||1);
+    const currentRatio=(y.cashClose+y.arClose+y.invClose+(+el('otherCA0').value||0))/((y.apClose+(+el('otherCL0').value||0))||1);
+    const ebitdaMargin=y.revenue>0? y.ebitda/y.revenue : 0, roe=y.netIncome/(y.equityClose||1);
+    const dscr=y.ebitda/((y.interest+y.debtRepay)||1);
+    const r=ratingFor(leverage,coverage,currentRatio,ebitdaMargin,roe);
+    return {t:y.t, isConstruction:false, leverage, coverage, currentRatio, dscr, composite:r.composite, grade:r.band.grade};
+  });
+  let credHtml=`<tr><th>${LANG==='en'?'Item':'البند'}</th>`+creditRows.map(r=>`<th>Y${yearLabel(r.t)}</th>`).join('')+`</tr>`;
+  credHtml+=`<tr><td>${LANG==='en'?'Leverage (Debt/EBITDA)':'الرافعة (الدين/EBITDA)'}</td>`+creditRows.map(r=>`<td>${x(r.leverage)}</td>`).join('')+`</tr>`;
+  credHtml+=`<tr><td>${LANG==='en'?'Interest Coverage':'تغطية الفوائد'}</td>`+creditRows.map(r=>`<td>${x(r.coverage)}</td>`).join('')+`</tr>`;
+  credHtml+=`<tr><td>DSCR</td>`+creditRows.map(r=>`<td>${x(r.dscr)}</td>`).join('')+`</tr>`;
+  credHtml+=`<tr><td>${LANG==='en'?'Current Ratio':'النسبة الجارية'}</td>`+creditRows.map(r=>`<td>${x(r.currentRatio)}</td>`).join('')+`</tr>`;
+  credHtml+=`<tr class="total"><td>${LANG==='en'?'Composite Score':'الدرجة المركبة'}</td>`+creditRows.map(r=>`<td>${r.composite!=null?r.composite.toFixed(0):'—'}</td>`).join('')+`</tr>`;
+  credHtml+=`<tr class="total"><td>${LANG==='en'?'Rating':'التصنيف'}</td>`+creditRows.map(r=>`<td>${r.grade}</td>`).join('')+`</tr>`;
+  el('creditTable').innerHTML = credHtml;
+
+  let covHtml=`<tr><th>${LANG==='en'?'Covenant':'التعهد'}</th>`+creditRows.map(r=>`<th>Y${yearLabel(r.t)}</th>`).join('')+`</tr>`;
+  covHtml+=`<tr><td>${LANG==='en'?'Leverage ≤ 4.5x':'الرافعة ≤ 4.5x'}</td>`+creditRows.map(r=>r.isConstruction?`<td>—</td>`:`<td><span class="pill ${r.leverage<=4.5?'ok':'bad'}">${r.leverage<=4.5?'PASS':'BREACH'}</span></td>`).join('')+`</tr>`;
+  covHtml+=`<tr><td>${LANG==='en'?'Interest Coverage ≥ 2.0x':'تغطية الفوائد ≥ 2.0x'}</td>`+creditRows.map(r=>r.isConstruction?`<td>—</td>`:`<td><span class="pill ${r.coverage>=2?'ok':'bad'}">${r.coverage>=2?'PASS':'BREACH'}</span></td>`).join('')+`</tr>`;
+  covHtml+=`<tr><td>DSCR ≥ 1.15x</td>`+creditRows.map(r=>r.isConstruction?`<td>—</td>`:`<td><span class="pill ${r.dscr>=1.15?'ok':'bad'}">${r.dscr>=1.15?'PASS':'BREACH'}</span></td>`).join('')+`</tr>`;
+  el('covTable').innerHTML = covHtml;
+
+
+  // Valuation
+  el('waccOut').innerHTML = `
+    <div class="field"><label>تكلفة حقوق الملكية</label><div class="mono">${pct(m.costEquity*100)}</div></div>
+    <div class="field"><label>تكلفة الدين بعد الضريبة</label><div class="mono">${pct(m.costDebtAT*100)}</div></div>
+    <div class="field" style="border-top:1px solid var(--ink-900);padding-top:10px;"><label>WACC</label><div class="mono" style="font-size:20px;font-weight:700;">${pct(m.wacc*100)}</div></div>`;
+  el('valSummary').innerHTML = `
+    <div class="field"><label>القيمة المؤسسية</label><div class="mono" style="font-size:20px;font-weight:700;">${fmt(m.ev)}</div></div>
+    <div class="field"><label>القيمة العادلة لحقوق الملكية</label><div class="mono" style="font-size:20px;font-weight:700;color:var(--positive);">${fmt(m.equityValue)}</div></div>`;
+  let dcfHtml=`<tr><th>البند</th>`+m.years.map(y=>`<th>Y${yearLabel(y.t)}</th>`).join('')+`<th>نهائية</th></tr>`;
+  dcfHtml+=`<tr class="total"><td>FCF</td>`+m.fcf.map(f=>`<td>${fmt(f)}</td>`).join('')+`<td>${fmt(m.tv)}</td></tr>`;
+  dcfHtml+=`<tr><td>PV</td>`+m.pvFcf.map(v=>`<td>${fmt(v)}</td>`).join('')+`<td>${fmt(m.pvTv)}</td></tr>`;
+  el('dcfTable').innerHTML = dcfHtml;
+
+  // Report
+  const last = creditRows[creditRows.length-1];
+  el('bankReport').innerHTML = `
+    <div class="report-title">${m.dealName} — ملخص طلب التمويل</div>
+    <div class="report-grid">
+      <div><b>نوع النشاط</b>${el('activityType').selectedOptions[0].text}</div>
+      <div><b>إجمالي مبلغ التمويل</b>${fmt(m.principal)}</div>
+      <div><b>السعر الفعلي</b>${pct(m.allInRate*100)}</div>
+      <div><b>مدة السداد</b>${m.totalFacilityYears.toFixed(1)} سنة</div>
+      <div><b>أفق الدراسة</b>${N} سنوات</div>
+      <div><b>التصنيف الائتماني (آخر سنة)</b>${last.grade} (${last.composite.toFixed(0)}/100)</div>
+      <div><b>القيمة العادلة لحقوق الملكية</b>${fmt(m.equityValue)}</div>
+      <div><b>WACC</b>${pct(m.wacc*100)}</div>
+    </div>
+    <table class="stmt"><tr><th>البند</th><th>Y${yearLabel(1)}</th><th>Y${yearLabel(N)}</th></tr>
+      <tr><td>الإيرادات</td><td>${fmt(m.years[0].revenue)}</td><td>${fmt(m.years[N-1].revenue)}</td></tr>
+      <tr><td>EBITDA</td><td>${fmt(m.years[0].ebitda)}</td><td>${fmt(m.years[N-1].ebitda)}</td></tr>
+      <tr><td>الرافعة المالية</td><td>${x(creditRows[0].leverage)}</td><td>${x(last.leverage)}</td></tr>
+      <tr><td>DSCR</td><td>${x(creditRows[0].dscr)}</td><td>${x(last.dscr)}</td></tr>
+    </table>
+    <div style="margin-top:16px;font-size:11px;color:var(--ink-500);">نموذج أولي بافتراضات قابلة للتعديل، لا يغني عن مراجعة مالية واكتتاب رسمي من الجهة الممولة.</div>`;
+
+  renderUSALI(m);
+  renderBankMetrics(m, creditRows);
+  renderScorecard(m, creditRows);
+  renderDashboard(m, creditRows);
+  renderCovCards(m, creditRows);
+  renderScenarioManager(m, creditRows);
+  renderSensitivity(m);
+  const auditResult = renderAudit(m, creditRows);
+  el('topbarProjName').textContent = m.dealName;
+  const allBalanced = auditResult.allPass;
+  const badge = el('auditBadge');
+  badge.textContent = allBalanced? 'AUDIT ✓ PASS' : `AUDIT ✗ ${auditResult.failCount} FAIL`;
+  badge.className = 'audit-badge'+(allBalanced?'':' fail');
+}
+
+// ---------------- IRR (bisection on NPV) ----------------
+function npv(rate, cashflows){
+  return cashflows.reduce((acc,cf,i)=> acc + cf/Math.pow(1+rate,i), 0);
+}
+function irr(cashflows){
+  let lo=-0.9, hi=5.0;
+  let fLo = npv(lo,cashflows), fHi = npv(hi,cashflows);
+  if(isNaN(fLo)||isNaN(fHi)) return NaN;
+  if(fLo*fHi>0){
+    // no sign change in range -> cannot bracket, try widening
+    hi=20; fHi=npv(hi,cashflows);
+    if(fLo*fHi>0) return NaN;
+  }
+  for(let i=0;i<200;i++){
+    const mid=(lo+hi)/2, fMid=npv(mid,cashflows);
+    if(Math.abs(fMid)<1e-6) return mid;
+    if(fLo*fMid<0){ hi=mid; fHi=fMid; } else { lo=mid; fLo=fMid; }
+  }
+  return (lo+hi)/2;
+}
+
+// ---------------- Bank metrics: DSCR/LLCR/PLCR/LTV/Debt Yield/IRR ----------------
+// ---------------- Credit Scorecard (weighted) ----------------
+function scoreOf(value, higherIsBetter, good, bad){
+  // linear score 0-100 between bad(=>0) and good(=>100)
+  let t = (value-bad)/((good-bad)||1);
+  if(!higherIsBetter) t = 1-t;
+  return Math.max(0, Math.min(100, t*100));
+}
+function renderScorecard(m, creditRows){
+  const opCreditRows = creditRows.filter(r=>!r.isConstruction);
+  const firstOpYear = m.years.find(y=>!y.isConstruction) || m.years[0];
+  const firstOpCreditRow = opCreditRows[0] || creditRows[0];
+
+  const dscrs = opCreditRows.map(r=>r.dscr).filter(v=>isFinite(v));
+  const dscrAvg = dscrs.reduce((a,b)=>a+b,0)/(dscrs.length||1);
+  const dscrMin = dscrs.length? Math.min(...dscrs) : NaN;
+  const opYears = m.years.filter(y=>!y.isConstruction);
+  const ebitdaMargins = opYears.filter(y=>y.revenue>0).map(y=>y.ebitda/y.revenue);
+  const ebitdaMarginAvg = ebitdaMargins.reduce((a,b)=>a+b,0)/(ebitdaMargins.length||1);
+  const ltvY1 = firstOpYear.facilityBal/(m.ev||1);
+  const leverageY1 = firstOpCreditRow.leverage;
+  const equity0 = m.years[0].equityOpen;
+  const equityCF = [-equity0, ...m.years.map((y,i)=> i===m.N-1 ? y.dividends+m.equityValue : y.dividends)];
+  const eqIRR = irr(equityCF);
+
+  const items = [
+    {label:LB('DSCR (المتوسط)','DSCR (Average)'), weight:15, val:dscrAvg, fmt:x(dscrAvg), score:scoreOf(dscrAvg,true,2.5,1.0), bench:LB('≥ 1.35x (معيار السوق)','≥ 1.35x (market benchmark)')},
+    {label:LB('DSCR (الحد الأدنى)','DSCR (Minimum)'), weight:20, val:dscrMin, fmt:x(dscrMin), score:scoreOf(dscrMin,true,2.0,1.0), bench:LB('≥ 1.20x (حد البنك)','≥ 1.20x (bank threshold)')},
+    {label:LB('هامش EBITDA (متوسط)','EBITDA Margin (Average)'), weight:15, val:ebitdaMarginAvg, fmt:pct(ebitdaMarginAvg*100), score:scoreOf(ebitdaMarginAvg,true,0.45,0.20), bench:LB('≥ 28.0% (معيار)','≥ 28.0% (benchmark)')},
+    {label:LB('LTV (نسبة الدين)','LTV (Loan-to-Value)'), weight:15, val:ltvY1, fmt:pct(ltvY1*100), score:scoreOf(ltvY1,false,0.85,0.55), bench:LB('≤ 75.0% (حد البنك)','≤ 75.0% (bank threshold)')},
+    {label:LB('الرافعة (سنة 1) Debt/EBITDA','Leverage (Y1) Debt/EBITDA'), weight:15, val:leverageY1, fmt:x(leverageY1), score:scoreOf(leverageY1,false,9,3), bench:LB('≤ 6.00x (معيار)','≤ 6.00x (benchmark)')},
+    {label:LB('Equity IRR (تقديري)','Equity IRR (estimated)'), weight:10, val:eqIRR, fmt:isFinite(eqIRR)?pct(eqIRR*100):'—', score: isFinite(eqIRR)? scoreOf(eqIRR,true,0.30,0.05) : 30, bench:LB('≥ 15.0% (هدف مستثمر)','≥ 15.0% (investor target)')},
+    {label:LB('مدة السداد المتبقية','Remaining Repayment Term'), weight:10, val:m.totalFacilityYears, fmt:m.totalFacilityYears.toFixed(1)+(LANG==='en'?' yrs':' سنة'), score:scoreOf(m.totalFacilityYears,false,12,5), bench:LB('≤ 10 سنوات (حد أقصى)','≤ 10 years (max)')},
+  ];
+  const composite = items.reduce((a,i)=>a+i.score*i.weight/100,0);
+  const band = SCORE_GRADE_DESC.find(b=>composite>=b.min);
+  const gradeClass = composite>=70?'':(composite>=50?'grade-mid':'grade-low');
+
+  el('scoreItems').innerHTML = items.map(it=>{
+    const barColor = it.score>=70? 'var(--positive)' : (it.score>=45? 'var(--brass)':'var(--negative)');
+    return `<div class="score-item">
+      <div class="top-row"><span>${RS(it.label)}</span><span class="weight">${LANG==='en'?'Weight':'وزن'} ${it.weight}%</span></div>
+      <div class="bench">${RS(it.bench)}</div>
+      <div class="top-row"><span class="val">${it.fmt}</span><span style="font-size:11px;color:var(--ink-500)">${it.score.toFixed(0)}/100</span></div>
+      <div class="score-bar-track"><div class="score-bar-fill" style="width:${it.score}%;background:${barColor};"></div></div>
+    </div>`;
+  }).join('');
+
+  const card = el('scoreCard');
+  card.className = 'score-card '+gradeClass;
+  el('scoreLetter').textContent = band.grade;
+  el('scoreDesc').textContent = LANG==='en'? band.descEn : band.desc;
+  el('scoreNumOut').textContent = composite.toFixed(0)+' / 100';
+
+  renderDefaultRisk(m, composite, ltvY1);
+  renderStressTest(m);
+  renderMarketBenchmark(m);
+  renderRealityCheck(m, creditRows);
+}
+
+// ---------------- PD lookup table (illustrative, rating-based) ----------------
+function pdFromScore(score){ return (PD_TABLE.find(b=>score>=b.min)||PD_TABLE[PD_TABLE.length-1]).pd; }
+
+// ---------------- Default Risk (Merton/Basel III-inspired) ----------------
+function renderDefaultRisk(m, baseComposite, ltvY1){
+  const pdBase = pdFromScore(baseComposite);
+  const stressed = computeStressScenario();
+  const pdStress = stressed ? pdFromScore(stressed.composite) : pdBase*2.2;
+  const lgd = ltvY1; // LGD ≈ LTV (تقريب شائع عند غياب بيانات استرداد فعلية)
+  const el_ = pdBase*lgd;
+  el('defaultRiskKpi').innerHTML = `
+    <div class="kpi-pro c-ink"><div class="label">${LANG==='en'?'Expected Loss (EL)':'الخسارة المتوقعة (EL)'}</div><div class="value mono">${pct(el_*100)}</div><div class="sub">EL = PD × LGD</div></div>
+    <div class="kpi-pro c-brass"><div class="label">${LANG==='en'?'Loss Given Default (LGD)':'الخسارة عند التعثر (LGD)'}</div><div class="value mono">${pct(lgd*100)}</div><div class="sub">${LANG==='en'?'≈ LTV':'≈ نسبة القرض للقيمة'}</div></div>
+    <div class="kpi-pro c-negative"><div class="label">${LANG==='en'?'PD (Stress)':'احتمال التعثر (Stress)'}</div><div class="value mono">${pct(pdStress*100)}</div></div>
+    <div class="kpi-pro c-positive"><div class="label">${LANG==='en'?'PD (Base)':'احتمال التعثر (Base)'}</div><div class="value mono">${pct(pdBase*100)}</div></div>
+  `;
+}
+
+// ---------------- Stress scenario shadow computation ----------------
+function computeStressScenario(){
+  if(el('activityType').value!=='hotel') return null;
+  const occPts = +el('stressOccPts').value||0;
+  const adrShockPct = (+el('stressAdrPct').value||0)/100;
+  const rateBps = (+el('stressRateBps').value||0)/10000;
+
+  const savedMODEL = MODEL;
+  const savedUSALIDetail = hotelUSALIDetail;
+  const occBackup = hotelYearData.occ.slice();
+  const adrBackup = hotelYearData.adr.slice();
+  const rateBackup = el('loanRate').value;
+  const tranchesBackup = JSON.parse(JSON.stringify(tranches));
+  const capInterestBackup = JSON.parse(JSON.stringify(capInterest));
+
+  hotelYearData.occ = hotelYearData.occ.map(v=> Math.max(5, v-occPts));
+  hotelYearData.adr = hotelYearData.adr.map(v=> v*(1-adrShockPct));
+  el('loanRate').value = (parseFloat(rateBackup)+rateBps*100).toFixed(3);
+
+  let stressedModel;
+  try{ stressedModel = computeModel(); } catch(e){ stressedModel = null; }
+
+  hotelYearData.occ = occBackup;
+  hotelYearData.adr = adrBackup;
+  el('loanRate').value = rateBackup;
+  tranches = tranchesBackup;
+  capInterest = capInterestBackup;
+  MODEL = savedMODEL;
+  hotelUSALIDetail = savedUSALIDetail;
+
+  if(!stressedModel) return null;
+  const stressedOpYears = stressedModel.years.filter(y=>!y.isConstruction);
+  const firstStressedOpYear = stressedOpYears[0] || stressedModel.years[0];
+  const dscrs = stressedOpYears.map(y=> y.ebitda/((y.interest+y.debtRepay)||1)).filter(v=>isFinite(v));
+  const minDSCR = dscrs.length? Math.min(...dscrs) : NaN;
+  const leverageY1 = firstStressedOpYear.totalDebt/(firstStressedOpYear.ebitda||1);
+  const ebitdaMargins = stressedOpYears.filter(y=>y.revenue>0).map(y=>y.ebitda/y.revenue);
+  const ebitdaMarginAvg = ebitdaMargins.reduce((a,b)=>a+b,0)/(ebitdaMargins.length||1);
+  const ltv = firstStressedOpYear.facilityBal/(stressedModel.ev||1);
+  const sLev = scoreOf(leverageY1,false,9,3), sDscr = scoreOf(minDSCR,true,2.0,1.0);
+  const sMar = scoreOf(ebitdaMarginAvg,true,0.45,0.20), sLtv = scoreOf(ltv,false,0.85,0.55);
+  const composite = sDscr*0.35+sLev*0.30+sMar*0.20+sLtv*0.15;
+  const band = SCORE_GRADE_DESC.find(b=>composite>=b.min);
+  return { minDSCR, leverageY1, composite, grade:band.grade };
+}
+
+function renderStressTest(m){
+  const stressed = computeStressScenario();
+  const baseOpYears = m.years.filter(y=>!y.isConstruction);
+  const firstBaseOpYear = baseOpYears[0] || m.years[0];
+  const baseCreditRows = baseOpYears.map(y=> y.ebitda/((y.interest+y.debtRepay)||1));
+  const baseMinDSCR = baseCreditRows.length? Math.min(...baseCreditRows.filter(v=>isFinite(v))) : NaN;
+  const baseLeverage = firstBaseOpYear.totalDebt/(firstBaseOpYear.ebitda||1);
+
+  if(!stressed){
+    el('stressTable').innerHTML = `<tr><td>${LANG==='en'?'Stress test only available for hotel activity type.':'اختبار الضغط متاح فقط لنشاط فندقي حاليًا.'}</td></tr>`;
+    return;
+  }
+  const rows = [
+    {label:LB('أقل DSCR عبر السنوات','Min DSCR across years'), base:x(baseMinDSCR), stress:x(stressed.minDSCR), ok:stressed.minDSCR>=1.0},
+    {label:LB('الرافعة (سنة 1)','Leverage (Y1)'), base:x(baseLeverage), stress:x(stressed.leverageY1), ok:stressed.leverageY1<=9},
+    {label:LB('التصنيف الائتماني','Credit Rating'), base:'—', stress:stressed.grade, ok:stressed.composite>=40},
+  ];
+  let html = `<tr><th>${LANG==='en'?'Metric':'المؤشر'}</th><th>${LANG==='en'?'Base Case':'الحالة الأساسية'}</th><th>${LANG==='en'?'Stress Case':'حالة الضغط'}</th><th>${LANG==='en'?'Result':'النتيجة'}</th></tr>`;
+  rows.forEach(r=>{
+    html += `<tr><td>${RS(r.label)}</td><td>${r.base}</td><td>${r.stress}</td><td><span class="pill ${r.ok?'ok':'bad'}">${r.ok? (LANG==='en'?'SURVIVES':'يتحمل الصدمة') : (LANG==='en'?'BREACH':'إخلال')}</span></td></tr>`;
+  });
+  el('stressTable').innerHTML = html;
+}
+
+// ---------------- Market benchmark (Red Sea / Egypt 5-star hotels — real market data) ----------------
+function renderMarketBenchmark(m){
+  if(el('activityType').value!=='hotel' || !hotelUSALIDetail.length){
+    el('marketBenchTable').innerHTML = `<tr><td>${LANG==='en'?'Market benchmark available for hotel activity type only.':'مقارنة السوق متاحة لنشاط فندقي فقط حاليًا.'}</td></tr>`;
+    el('marketBenchSource').textContent='';
+    return;
+  }
+  const lastIdx = hotelUSALIDetail.length-1;
+  const stabilizedOcc = hotelUSALIDetail[lastIdx].occ;
+  const y1Occ = hotelUSALIDetail[0].occ;
+  const stabilizedADR = hotelUSALIDetail[lastIdx].adr;
+  const stabilizedRevPAR = hotelUSALIDetail[lastIdx].revPAR;
+  const revparGrowthImplied = hotelUSALIDetail.length>1 ? (hotelUSALIDetail[lastIdx].revPAR/hotelUSALIDetail[0].revPAR-1) : 0;
+
+  const bench = { occLow:0.70, occHigh:0.82, occTypical:0.78, revparUSDLow:55, revparUSDHigh:75, revparGrowthLow:0.15, revparGrowthHigh:0.45 };
+  const rows = [
+    {label:LB('الإشغال عند النضج (آخر سنة)','Occupancy at Stabilization (last year)'), val:pct(stabilizedOcc*100), range:`${pct(bench.occLow*100)} – ${pct(bench.occHigh*100)}`, ok: stabilizedOcc>=bench.occLow && stabilizedOcc<=bench.occHigh+0.05},
+    {label:LB('RevPAR عند النضج','RevPAR at Stabilization'), val:fmt(stabilizedRevPAR), range:`$${bench.revparUSDLow} – $${bench.revparUSDHigh}`, ok: stabilizedRevPAR>=bench.revparUSDLow*0.8},
+    {label:LB('ADR عند النضج','ADR at Stabilization'), val:fmt(stabilizedADR), range: LANG==='en'?'Varies by positioning':'يعتمد على تموضع الفندق', ok:true},
+    {label:LB('نمو RevPAR المُفترض (كامل الأفق)','Assumed RevPAR Growth (full horizon)'), val:pct(revparGrowthImplied*100), range:`${pct(bench.revparGrowthLow*100)} – ${pct(bench.revparGrowthHigh*100)} ${LANG==='en'?'(vs STR YoY range below)':'(مقارنة بنطاق STR السنوي أدناه)'}`, ok: true},
+  ];
+  let html = `<tr><th>${LANG==='en'?'Metric':'المؤشر'}</th><th>${LANG==='en'?'This Project':'هذا المشروع'}</th><th>${LANG==='en'?'Market Range (Red Sea 5-star)':'نطاق السوق (فنادق 5 نجوم — البحر الأحمر)'}</th><th>${LANG==='en'?'Result':'النتيجة'}</th></tr>`;
+  rows.forEach(r=>{
+    html += `<tr><td>${RS(r.label)}</td><td>${r.val}</td><td>${r.range}</td><td><span class="pill ${r.ok?'ok':'bad'}">${r.ok?(LANG==='en'?'IN RANGE':'ضمن النطاق'):(LANG==='en'?'OUTLIER':'خارج النطاق')}</span></td></tr>`;
+  });
+  html += `<tr><td colspan="4" style="text-align:${LANG==='en'?'left':'right'};padding-top:14px;">
+    <b>${LANG==='en'?'STR-reported YoY RevPAR growth (MEA update, March 2025 data):':'نمو RevPAR السنوي المُبلَّغ من STR (تحديث الشرق الأوسط وأفريقيا، بيانات مارس 2025):'}</b><br>
+    Sharm El Sheikh: <span class="mono">+41.2%</span> &nbsp;|&nbsp; Hurghada: <span class="mono">+34.7%</span> &nbsp;—&nbsp; ${LANG==='en'?'the two strongest-growing markets in the MEA region that period.':'أقوى سوقين نموًا في منطقة الشرق الأوسط وأفريقيا في نفس الفترة.'}
+  </td></tr>`;
+  el('marketBenchTable').innerHTML = html;
+  el('marketBenchSource').innerHTML = LANG==='en'
+    ? 'Sources: <a href="https://str.com/data-insights-blog/middle-east-africa-hotel-performance-update" target="_blank" rel="noopener">STR — Middle East &amp; Africa Hotel Performance Update</a> (Sharm El Sheikh/Hurghada RevPAR growth, March 2025 data); Gitnux Egypt Tourism Statistics (Hurghada 5-star ~78% avg occupancy 2023); Mohamed Taman Hurghada Tourism Market Report 2025 (RevPAR EGP 3,203, 2024). Figures are indicative STR/MENA regional benchmarks, not a formal comparable-set appraisal from a subscription STR/MENA Hotel Benchmark Survey report — for underwriting-grade numbers, commission a dedicated STR Trend/Comp Set report for the exact competitive set.'
+    : 'المصادر: <a href="https://str.com/data-insights-blog/middle-east-africa-hotel-performance-update" target="_blank" rel="noopener">STR — تحديث أداء فنادق الشرق الأوسط وأفريقيا</a> (نمو RevPAR شرم الشيخ/الغردقة، بيانات مارس 2025)؛ Gitnux لإحصاءات السياحة المصرية (فنادق الغردقة 5 نجوم ~78% متوسط إشغال 2023)؛ تقرير Mohamed Taman لسوق سياحة الغردقة 2025 (RevPAR 3,203 جنيه، 2024). الأرقام مؤشرات استرشادية من تقارير STR/MENA العامة، مش تقرير STR/MENA Hotel Benchmark Survey مدفوع لمجموعة منافسين محددة بالاسم — للتقديم الرسمي للبنك يُفضّل طلب تقرير STR Trend/Comp Set مخصص لمجموعة الفنادق المنافسة الفعلية.';
+}
+
+// ---------------- Assumptions Reality Check ----------------
+function renderRealityCheck(m, creditRows){
+  if(el('activityType').value!=='hotel' || !hotelUSALIDetail.length){
+    el('realityCheckBody').innerHTML = `<span style="font-size:12px;color:var(--ink-500);">${LANG==='en'?'Reality check available for hotel activity type only.':'التحقق من الافتراضات متاح لنشاط فندقي فقط حاليًا.'}</span>`;
+    return;
+  }
+  const lastIdx = hotelUSALIDetail.length-1;
+  const stabilizedOcc = hotelUSALIDetail[lastIdx].occ;
+  const adrGrowthImplied = hotelUSALIDetail.length>1 ? Math.pow(hotelUSALIDetail[lastIdx].adr/hotelUSALIDetail[0].adr, 1/lastIdx)-1 : 0;
+  const avgGopMargin = hotelUSALIDetail.reduce((a,d)=>a+d.gopMargin,0)/hotelUSALIDetail.length;
+  const avgNoiMargin = hotelUSALIDetail.reduce((a,d)=>a+d.noiMargin,0)/hotelUSALIDetail.length;
+  const leverageY1 = creditRows[0].leverage;
+
+  function check(label, value, ok, warn, note){
+    const status = ok? 'ok' : (warn? 'warn':'bad');
+    return {label, value, status, note};
+  }
+  const checks = [
+    check(LB('إشغال مستقر أعلى من 85%؟','Stabilized occupancy above 85%?'), pct(stabilizedOcc*100), stabilizedOcc<=0.85, stabilizedOcc<=0.90,
+      LB('إشغال أعلى من 85% نادر ومستمر لفنادق منتجع على مدار السنة — راجع الافتراض.','Occupancy above 85% is rare and hard to sustain year-round for resort hotels — review this assumption.')),
+    check(LB('نمو ADR السنوي أعلى من 8%؟','Annual ADR growth above 8%?'), pct(adrGrowthImplied*100), adrGrowthImplied<=0.08, adrGrowthImplied<=0.12,
+      LB('نمو مركّب أعلى من 8-10% سنويًا لفترة طويلة غير واقعي عادةً بدون تضخم استثنائي.','Compound growth above 8-10% p.a. for a long period is usually unrealistic without exceptional inflation.')),
+    check(LB('هامش GOP أعلى من 55%؟','GOP margin above 55%?'), pct(avgGopMargin*100), avgGopMargin<=0.55, avgGopMargin<=0.60,
+      LB('هوامش GOP فوق 55% غير شائعة إلا في فنادق فاخرة جدًا بإشغال مرتفع مستقر.','GOP margins above 55% are uncommon except in very high-end hotels with stable high occupancy.')),
+    check(LB('هامش EBITDA أقل من 20%؟','EBITDA margin below 20%?'), pct(avgNoiMargin*100), avgNoiMargin>=0.20, avgNoiMargin>=0.15,
+      LB('هامش EBITDA أقل من 20% ضعيف لمشروع فندقي ويستحق مراجعة التكاليف والافتراضات.','EBITDA margin below 20% is weak for a hotel project and warrants a cost/assumption review.')),
+    check(LB('الرافعة المالية (سنة 1) أعلى من 7x؟','Leverage (Y1) above 7x?'), x(leverageY1), leverageY1<=7, leverageY1<=8.5,
+      LB('رافعة مالية أعلى من 7x مرتفعة لمشروع فندقي تحت الإنشاء وقد تصعّب الموافقة الائتمانية.','Leverage above 7x is high for a hotel project under construction and may complicate credit approval.')),
+  ];
+  el('realityCheckBody').innerHTML = checks.map(c=>`
+    <div class="flag-card ${c.status}">
+      <div><b>${RS(c.label)}</b><div style="font-size:11px;color:var(--ink-700);margin-top:3px;">${RS(c.note)}</div></div>
+      <div style="display:flex;align-items:center;gap:10px;"><span class="mono" style="font-weight:700;">${c.value}</span><span class="tag">${c.status==='ok'?(LANG==='en'?'OK':'سليم'):c.status==='warn'?(LANG==='en'?'WATCH':'مراقبة'):(LANG==='en'?'FLAG':'تنبيه')}</span></div>
+    </div>`).join('');
+}
+function renderDashboard(m, creditRows){
+  const equity0 = m.years[0].equityOpen;
+  const ltvY1 = m.years[0].facilityBal/(m.ev||1);
+  const totalRev = m.years.reduce((a,y)=>a+y.revenue,0);
+  const totalEbitda = m.years.reduce((a,y)=>a+y.ebitda,0);
+  const totalNOI = totalEbitda; // proxy
+  const moic = m.years.reduce((a,y)=>a+y.netIncome,0)/(equity0||1);
+
+  el('execKpi').innerHTML = `
+    <div class="kpi-pro c-ink"><div class="label">${LANG==='en'?'Total Investment':'إجمالي الاستثمار'}</div><div class="value mono">${fmt(m.principal+equity0)}</div></div>
+    <div class="kpi-pro c-positive"><div class="label">${LANG==='en'?'Equity':'حقوق الملكية'} (${pct(equity0/(m.principal+equity0)*100)})</div><div class="value mono">${fmt(equity0)}</div></div>
+    <div class="kpi-pro c-brass"><div class="label">${LANG==='en'?'Debt Facility':'تسهيل الدين'} (LTV ${pct(ltvY1*100)})</div><div class="value mono">${fmt(m.principal)}</div></div>
+    <div class="kpi-pro"><div class="label">${LANG==='en'?'Total EBITDA (all years)':'إجمالي EBITDA (كل السنوات)'}</div><div class="value mono">${fmt(totalEbitda)}</div></div>
+    <div class="kpi-pro c-positive"><div class="label">${LANG==='en'?'MOIC (Net Income/Equity)':'MOIC (صافي الربح/الإيكويتي)'}</div><div class="value mono">${moic.toFixed(2)}x</div></div>
+  `;
+
+  const rows = [
+    {label:LB('الإيرادات','Revenue'), values:m.years.map(y=>fmt(y.revenue))},
+    {label:LB('EBITDA','EBITDA'), values:m.years.map(y=>fmt(y.ebitda))},
+    {label:LB('هامش EBITDA','EBITDA Margin'), values:m.years.map(y=>y.revenue>0? pct(y.ebitda/y.revenue*100) : '—')},
+    {label:LB('صافي الربح','Net Profit'), values:m.years.map(y=>fmt(y.netIncome))},
+    {label:LB('خدمة الدين','Debt Service'), values:m.years.map(y=>fmt(y.interest+y.debtRepay))},
+    {label:LB('DSCR','DSCR'), values:creditRows.map(r=>x(r.dscr))},
+    {label:LB('رصيد الدين','Debt Balance'), values:m.years.map(y=>fmt(y.facilityBal))},
+    {label:LB('التصنيف','Rating'), values:creditRows.map(r=>r.grade)},
+  ];
+  let html = `<tr><th>${LANG==='en'?'Item':'البند'}</th>`+m.years.map(y=>`<th>Y${yearLabel(y.t)}</th>`).join('')+`</tr>`;
+  rows.forEach(r=>{ html += `<tr><td>${RS(r.label)}</td>`+r.values.map(v=>`<td>${v}</td>`).join('')+`</tr>`; });
+  el('dashTable').innerHTML = html;
+}
+
+// ---------------- Covenant cards (Year 1) ----------------
+function renderCovCards(m, creditRows){
+  const firstOpYear = m.years.find(y=>!y.isConstruction) || m.years[0];
+  const y1 = creditRows.find(r=>!r.isConstruction) || creditRows[0];
+  const yl = el('covCardsYearLabel'); if(yl) yl.textContent = `${LANG==='en'?'Covenant Check':'فحص التعهدات'} — Y${yearLabel(firstOpYear.t)} (${LANG==='en'?'first operating year':'أول سنة تشغيل'})`;
+  const cards = [
+    {name:LB('DSCR (الحد الأدنى)','DSCR (Minimum)'), val:x(y1.dscr), ok:y1.dscr>=1.20, target:'≥ 1.20x'},
+    {name:LB('LTV (نسبة القرض لقيمة الاستثمار)','LTV (Loan-to-Value)'), val:pct(firstOpYear.facilityBal/(m.ev||1)*100), ok:(firstOpYear.facilityBal/(m.ev||1))<=0.75, target:'≤ 75.0%'},
+    {name:LB('هامش EBITDA','EBITDA Margin'), val:firstOpYear.revenue>0?pct(firstOpYear.ebitda/firstOpYear.revenue*100):'—', ok:firstOpYear.revenue>0 && (firstOpYear.ebitda/firstOpYear.revenue)>=0.28, target:'≥ 28.0%'},
+    {name:LB('الرافعة Debt/EBITDA','Leverage Debt/EBITDA'), val:x(y1.leverage), ok:y1.leverage<=6.0, target:'≤ 6.00x'},
+    {name:LB('Debt Yield (EBITDA/الدين)','Debt Yield (EBITDA/Debt)'), val:pct(firstOpYear.ebitda/(m.principal||1)*100), ok:(firstOpYear.ebitda/(m.principal||1))>=0.10, target:'≥ 10.0%'},
+  ];
+  el('covCards').innerHTML = cards.map(c=>`
+    <div class="cov-card ${c.ok?'pass':'fail'}">
+      <div><b>${RS(c.name)}</b><div style="font-size:11px;color:var(--ink-500)">${LANG==='en'?'Target':'الهدف'}: ${c.target}</div></div>
+      <div style="display:flex;align-items:center;gap:10px;"><span class="mono" style="font-weight:700;">${c.val}</span><span class="badge">${c.ok?'PASS ✓':'FAIL ✗'}</span></div>
+    </div>`).join('');
+}
+
+// ---------------- USALI Income Statement ----------------
+function renderUSALI(m){
+  const isHotel = el('activityType').value==='hotel';
+  el('usaliContent').style.display = isHotel? 'block':'none';
+  el('usaliNotHotelNote').style.display = isHotel? 'none':'block';
+  if(!isHotel || !hotelUSALIDetail.length) return;
+
+  const operatingYears = m.years.filter(y=>!y.isConstruction);
+  const opN = hotelUSALIDetail.length;
+  const totalRevAll = hotelUSALIDetail.reduce((a,d)=>a+d.totalRev,0);
+  const totalNOIAll = hotelUSALIDetail.reduce((a,d)=>a+d.noi,0);
+  const avgGopMargin = hotelUSALIDetail.reduce((a,d)=>a+d.gopMargin,0)/(opN||1);
+  const avgNoiMargin = hotelUSALIDetail.reduce((a,d)=>a+d.noiMargin,0)/(opN||1);
+
+  el('usaliKpi').innerHTML = `
+    <div class="kpi-pro c-brass"><div class="label">${LANG==='en'?`Total Revenue (${opN}Y Operating)`:`إجمالي الإيرادات (${opN} سنة تشغيل)`}</div><div class="value mono">${fmt(totalRevAll)}</div></div>
+    <div class="kpi-pro c-ink"><div class="label">${LANG==='en'?'Avg GOP Margin':'متوسط هامش GOP'}</div><div class="value mono">${pct(avgGopMargin*100)}</div></div>
+    <div class="kpi-pro c-positive"><div class="label">${LANG==='en'?'Avg EBITDA (NOI) Margin':'متوسط هامش EBITDA (NOI)'}</div><div class="value mono">${pct(avgNoiMargin*100)}</div></div>
+    <div class="kpi-pro"><div class="label">${LANG==='en'?`Total EBITDA (${opN}Y)`:`إجمالي EBITDA (${opN} سنة)`}</div><div class="value mono">${fmt(totalNOIAll)}</div></div>
+  `;
+
+  const rows = [
+    {section:LB('إحصاءات التشغيل','Operating Statistics')},
+    {label:LB('معدل الإشغال','Occupancy'), values:hotelUSALIDetail.map(d=>pct(d.occ*100))},
+    {label:LB('متوسط سعر الغرفة — Gross ADR','Gross ADR'), values:hotelUSALIDetail.map(d=>fmt(d.adr))},
+    {label:LB('الليالي المباعة','Rooms Sold'), values:hotelUSALIDetail.map(d=>Math.round(d.roomsSold).toLocaleString())},
+    {label:LB('RevPAR','RevPAR'), values:hotelUSALIDetail.map(d=>fmt(d.revPAR))},
+    {section:LB('الإيرادات','Revenue')},
+    {label:LB('إيراد الغرف','Rooms Revenue'), values:hotelUSALIDetail.map(d=>fmt(d.roomsGross))},
+    {label:LB('إيراد F&B','F&B Revenue'), values:hotelUSALIDetail.map(d=>fmt(d.fb))},
+    {label:LB('إيرادات أخرى','Other Revenue'), values:hotelUSALIDetail.map(d=>fmt(d.other))},
+    {label:LB('إجمالي الإيرادات','Total Revenue'), total:true, values:hotelUSALIDetail.map(d=>fmt(d.totalRev))},
+    {section:LB('المصروفات التشغيلية','Operating Expenses')},
+    {label:LB('تكلفة الغرف','Room Cost'), values:hotelUSALIDetail.map(d=>fmt(-d.roomCost))},
+    {label:LB('تكلفة F&B','F&B Cost'), values:hotelUSALIDetail.map(d=>fmt(-d.fbCost))},
+    {label:LB('الرواتب والأجور','Payroll'), values:hotelUSALIDetail.map(d=>fmt(-d.payroll))},
+    {label:LB('إدارة وعمومية','Admin & General'), values:hotelUSALIDetail.map(d=>fmt(-d.admin))},
+    {label:LB('مبيعات وتسويق','Sales & Marketing'), values:hotelUSALIDetail.map(d=>fmt(-d.mktOpex))},
+    {label:LB('صيانة ومرافق','Maintenance & Utilities'), values:hotelUSALIDetail.map(d=>fmt(-d.maint))},
+    {label:LB('رسوم تسويق العلامة + إدارة أساسية + ترخيص','Brand Marketing + Base Mgmt + License Fees'), values:hotelUSALIDetail.map(d=>fmt(-(d.mkt+d.mgmt+d.lic)))},
+    {label:LB('إجمالي المصروفات التشغيلية','Total Operating Expenses'), total:true, values:hotelUSALIDetail.map(d=>fmt(-d.totalExpenses))},
+    {section:LB('الربحية','Profitability')},
+    {label:LB('الربح التشغيلي الإجمالي (GOP)','Gross Operating Profit (GOP)'), total:true, values:hotelUSALIDetail.map(d=>fmt(d.gop))},
+    {label:LB('هامش GOP','GOP Margin'), values:hotelUSALIDetail.map(d=>pct(d.gopMargin*100))},
+    {label:LB('رسوم حافز الإدارة','Incentive Management Fee'), values:hotelUSALIDetail.map(d=>fmt(-d.incentive))},
+    {label:LB('احتياطي الإحلال','Replacement Reserve'), values:hotelUSALIDetail.map(d=>fmt(-d.reserve))},
+    {label:LB('EBITDA (صافي الدخل التشغيلي — NOI)','EBITDA (Net Operating Income — NOI)'), total:true, values:hotelUSALIDetail.map(d=>fmt(d.noi))},
+    {label:LB('هامش EBITDA','EBITDA Margin'), values:hotelUSALIDetail.map(d=>pct(d.noiMargin*100))},
+    {section:LB('من EBITDA إلى صافي الربح (على مستوى الشركة)','From EBITDA to Net Profit (Company Level)')},
+    {label:LB('إهلاك','Depreciation'), values:operatingYears.map(y=>fmt(-y.depreciation))},
+    {label:LB('مصروف الفوائد','Interest Expense'), values:operatingYears.map(y=>fmt(-y.interest))},
+    {label:LB('الربح قبل الضريبة','Earnings Before Tax'), values:operatingYears.map(y=>fmt(y.ebt))},
+    {label:LB('الضريبة','Income Tax'), values:operatingYears.map(y=>fmt(-y.tax))},
+    {label:LB('صافي الربح','Net Profit'), total:true, values:operatingYears.map(y=>fmt(y.netIncome))},
+  ];
+
+  let html = `<tr><th>${LANG==='en'?'Item':'البند'}</th>`+operatingYears.map(y=>`<th>Y${yearLabel(y.t)}</th>`).join('')+`</tr>`;
+  rows.forEach(r=>{
+    if(r.section){ html += `<tr class="section"><td colspan="${opN+1}">${RS(r.section)}</td></tr>`; return; }
+    html += `<tr class="${r.total?'total':''}"><td>${RS(r.label)}</td>`+r.values.map(v=>`<td>${v}</td>`).join('')+`</tr>`;
+  });
+  el('usaliTable').innerHTML = html;
+}
+
+// ---------------- Scenario Manager ----------------
+function renderScenarioManager(m, creditRows){
+  const rows = [
+    {label:LB('تعديل الإشغال (نقاط مئوية)','Occupancy Adjustment (pts)'), base:'0', up:'+3', down:'-8'},
+    {label:LB('تعديل ADR (%)','ADR Adjustment (%)'), base:'0%', up:'+5%', down:'-8%'},
+    {label:LB('تجاوز تكلفة الإنشاء (%)','Construction Cost Overrun (%)'), base:'0%', up:'-3%', down:'+10%'},
+    {label:LB('صدمة سعر الفائدة (نقاط)','Interest Rate Shock (pts)'), base:'0', up:'-0.5', down:'+1.5'},
+  ];
+  let html = `<tr><th>${LANG==='en'?'Driver':'المتغير'}</th><th>Base</th><th>Upside</th><th>Downside</th></tr>`;
+  rows.forEach(r=> html += `<tr><td>${RS(r.label)}</td><td>${r.base}</td><td style="color:var(--positive)">${r.up}</td><td style="color:var(--negative)">${r.down}</td></tr>`);
+  el('scenarioTable').innerHTML = html;
+
+  const scnKey = el('activeScenario').value;
+  const scnNameMap = {base:LB('الحالة الأساسية','Base Case'), upside:LB('تفاؤلي','Upside'), downside:LB('تحفظي','Downside')};
+  const eqIRR = (function(){
+    const equity0 = m.years[0].equityOpen;
+    const cf = [-equity0, ...m.years.map((y,i)=> i===m.N-1? y.dividends+m.equityValue : y.dividends)];
+    return irr(cf);
+  })();
+  el('scenarioKpi').innerHTML = `
+    <div class="kpi"><div class="label">${LANG==='en'?'Active Scenario':'السيناريو النشط'}</div><div class="value mono" style="font-size:16px;">${RS(scnNameMap[scnKey])}</div></div>
+    <div class="kpi"><div class="label">Equity IRR</div><div class="value mono">${isFinite(eqIRR)?pct(eqIRR*100):'—'}</div></div>
+    <div class="kpi"><div class="label">${LANG==='en'?'Min DSCR':'أقل DSCR'}</div><div class="value mono">${x(Math.min(...creditRows.map(r=>r.dscr).filter(v=>isFinite(v))))}</div></div>
+    <div class="kpi"><div class="label">${LANG==='en'?'Rating':'التصنيف'}</div><div class="value mono">${creditRows[creditRows.length-1].grade}</div></div>
+  `;
+}
+
+// ---------------- Generalized shadow computation ----------------
+function withShadowInputs(occDeltaPts, rateDeltaPts, fn){
+  if(el('activityType').value!=='hotel') return null;
+  const savedMODEL = MODEL;
+  const savedUSALIDetail = hotelUSALIDetail;
+  const occBackup = hotelYearData.occ.slice();
+  const rateBackup = el('loanRate').value;
+  const tranchesBackup = JSON.parse(JSON.stringify(tranches));
+  const capInterestBackup = JSON.parse(JSON.stringify(capInterest));
+
+  hotelYearData.occ = hotelYearData.occ.map(v=> Math.max(5, v-occDeltaPts));
+  el('loanRate').value = (parseFloat(rateBackup)+rateDeltaPts).toFixed(3);
+
+  let result = null;
+  try{ const m = computeModel(); result = fn(m); } catch(e){ result = null; }
+
+  hotelYearData.occ = occBackup;
+  el('loanRate').value = rateBackup;
+  tranches = tranchesBackup;
+  capInterest = capInterestBackup;
+  MODEL = savedMODEL;
+  hotelUSALIDetail = savedUSALIDetail;
+  return result;
+}
+function sensMetrics(m){
+  const opYears = m.years.filter(y=>!y.isConstruction);
+  const dscrs = opYears.map(y=> y.ebitda/((y.interest+y.debtRepay)||1)).filter(v=>isFinite(v));
+  const minDSCR = dscrs.length? Math.min(...dscrs) : NaN;
+  const equity0 = m.years[0].equityOpen;
+  const cf = [-equity0, ...m.years.map((y,i)=> i===m.N-1? y.dividends+m.equityValue : y.dividends)];
+  const eqIRR = irr(cf);
+  return {minDSCR, eqIRR};
+}
+
+// ---------------- Sensitivity Analysis ----------------
+function renderSensitivity(m){
+  if(el('activityType').value!=='hotel'){
+    const msg = `<tr><td>${LANG==='en'?'Sensitivity analysis available for hotel activity type only.':'تحليل الحساسية متاح لنشاط فندقي فقط حاليًا.'}</td></tr>`;
+    el('sensIRRTable').innerHTML = msg; el('sensDSCRTable').innerHTML = msg;
+    return;
+  }
+  const occShocks = [-10,-5,0,5,10];
+  const rateShocks = [-2,-1,0,1,2];
+  let irrHtml = `<tr><th>${LANG==='en'?'Occ ⇩ / Rate ⇒':'الإشغال ⇩ / الفائدة ⇒'}</th>`+rateShocks.map(r=>`<th>${r>0?'+':''}${r}pt</th>`).join('')+`</tr>`;
+  let dscrHtml = irrHtml;
+  occShocks.forEach(occ=>{
+    irrHtml += `<tr><td>${occ>0?'+':''}${occ}pt</td>`;
+    dscrHtml += `<tr><td>${occ>0?'+':''}${occ}pt</td>`;
+    rateShocks.forEach(rate=>{
+      const res = withShadowInputs(occ, rate, sensMetrics);
+      const isMid = occ===0 && rate===0;
+      const irrVal = res && isFinite(res.eqIRR) ? pct(res.eqIRR*100) : '—';
+      const dscrVal = res && isFinite(res.minDSCR) ? x(res.minDSCR) : '—';
+      irrHtml += `<td${isMid?' style="background:var(--brass-soft);font-weight:700;"':''}>${irrVal}</td>`;
+      dscrHtml += `<td${isMid?' style="background:var(--brass-soft);font-weight:700;"':''}>${dscrVal}</td>`;
+    });
+    irrHtml += `</tr>`; dscrHtml += `</tr>`;
+  });
+  el('sensIRRTable').innerHTML = irrHtml;
+  el('sensDSCRTable').innerHTML = dscrHtml;
+}
+
+// ---------------- Audit Checks ----------------
+function renderAudit(m, creditRows){
+  const checks = [];
+  const allBalanced = m.years.every(y=>Math.abs(y.checkDiff)<1);
+  checks.push({name:LB('توازن الميزانية كل سنة','Balance Sheet balances every year'), ok: allBalanced});
+
+  const pctSum = periods.reduce((a,p)=>a+p.repay_pct,0);
+  checks.push({name:LB('مجموع نسب سداد القرض = 100%','Loan repayment % sums to 100%'), ok: Math.abs(pctSum-1)<0.02});
+
+  const debtEquitySum = (+el('targetDebtPct').value||0);
+  checks.push({name:LB('نسبة الدين وحقوق الملكية = 100%','Debt % + Equity % = 100%'), ok: debtEquitySum>0 && debtEquitySum<=100});
+
+  const dscrs = creditRows.map(r=>r.dscr).filter(v=>isFinite(v));
+  const minDSCR = Math.min(...dscrs);
+  checks.push({name:LB('أقل DSCR ≥ 1.0x (لا يوجد عجز نقدي)','Min DSCR ≥ 1.0x (no cash shortfall)'), ok: minDSCR>=1.0});
+
+  const cashNeverNegative = m.years.every(y=>y.cashClose>=-1);
+  checks.push({name:LB('رصيد النقدية لا يقل عن صفر في أي سنة','Cash balance never negative'), ok: cashNeverNegative});
+
+  const occValid = hotelUSALIDetail.length ? hotelUSALIDetail.every(d=>d.occ<=1.0 && d.occ>0) : true;
+  checks.push({name:LB('معدل الإشغال بين 0% و100% لكل سنة','Occupancy between 0% and 100% each year'), ok: occValid});
+
+  checks.push({name:LB('إجمالي مدة التمويل ≤ 10 سنوات','Total facility tenor ≤ 10 years'), ok: m.totalFacilityYears<=10.01});
+
+  const N = m.N;
+  checks.push({name:LB('عدد سنوات العرض بين 2 و10','Projection years between 2 and 10'), ok: N>=2 && N<=10});
+
+  const rateReasonable = m.allInRate>=0 && m.allInRate<=0.35;
+  checks.push({name:LB('سعر الفائدة الفعلي ضمن نطاق منطقي (0-35%)','Effective interest rate within reasonable range (0-35%)'), ok: rateReasonable});
+
+  const capexTotal = capexCategories.reduce((a,c)=>a+c.amount,0);
+  checks.push({name:LB('إجمالي بنود تكلفة الإنشاء أكبر من صفر','Total CAPEX line items greater than zero'), ok: capexTotal>0});
+
+  const ltvY1 = m.years[0].facilityBal/(m.ev||1);
+  checks.push({name:LB('LTV سنة 1 ضمن نطاق منطقي (≤ 95%)','Year-1 LTV within reasonable range (≤ 95%)'), ok: ltvY1<=0.95});
+
+  checks.push({name:LB('حقوق الملكية لا تتجه لسالب بشكل غير منطقي','Equity does not trend implausibly negative'), ok: m.years[m.N-1].equityClose > -Math.abs(m.years[0].equity0)});
+
+  const failCount = checks.filter(c=>!c.ok).length;
+  const allPass = failCount===0;
+
+  el('auditKpi').innerHTML = `
+    <div class="kpi-pro ${allPass?'c-positive':'c-negative'}"><div class="label">${LANG==='en'?'Overall Health':'الحالة العامة'}</div><div class="value mono">${allPass?(LANG==='en'?'PASS':'سليم'):(LANG==='en'?'FAIL':'يوجد خلل')}</div></div>
+    <div class="kpi-pro c-ink"><div class="label">${LANG==='en'?'Checks Passed':'فحوصات ناجحة'}</div><div class="value mono">${checks.length-failCount} / ${checks.length}</div></div>
+    <div class="kpi-pro c-brass"><div class="label">${LANG==='en'?'Checks Failed':'فحوصات فاشلة'}</div><div class="value mono">${failCount}</div></div>
+    <div class="kpi-pro"><div class="label">${LANG==='en'?'Last Run':'آخر تشغيل'}</div><div class="value mono" style="font-size:14px;">${new Date().toLocaleTimeString(LANG==='en'?'en-US':'ar-EG')}</div></div>
+  `;
+  el('auditChecksBody').innerHTML = checks.map(c=>`
+    <div class="flag-card ${c.ok?'ok':'bad'}">
+      <div><b>${RS(c.name)}</b></div>
+      <span class="tag">${c.ok?(LANG==='en'?'PASS':'سليم'):(LANG==='en'?'FAIL':'خلل')}</span>
+    </div>`).join('');
+
+  return {allPass, failCount};
+}
+
+function renderBankMetrics(m, creditRows){
+  const N = m.N;
+  const loanRate = m.allInRate;
+  const cfads = m.years.map(y=> Math.max(0,y.ebitda-y.tax)); // CFADS proxy
+  const lastLoanYear = m.years.reduce((mx,y)=> y.facilityBal>1 ? y.t : mx, 1);
+
+  const rows = m.years.map((y,i)=>{
+    // LLCR: PV of CFADS from this year to end of loan life, discounted at loan rate, / opening facility balance
+    let pvLoanLife=0;
+    for(let k=i;k<N && m.years[k].t<=lastLoanYear;k++){ pvLoanLife += cfads[k]/Math.pow(1+loanRate,k-i+1); }
+    const llcr = pvLoanLife/(y.facilityBal+y.debtRepay||1); // approx opening balance = closing+repay this yr
+
+    // PLCR: PV of CFADS through end of project horizon
+    let pvProjectLife=0;
+    for(let k=i;k<N;k++){ pvProjectLife += cfads[k]/Math.pow(1+loanRate,k-i+1); }
+    const plcr = pvProjectLife/(y.facilityBal+y.debtRepay||1);
+
+    const debtYield = y.ebitda/(y.facilityBal||1);
+    const ltv = y.facilityBal/(m.ev||1);
+
+    return {t:y.t, llcr, plcr, debtYield, ltv};
+  });
+
+  // Equity IRR: -equity0, then dividends each year, + terminal equity value added to last year
+  const equity0 = m.years[0] ? (m.years[0].equityOpen) : 0;
+  const equityCF = [-equity0, ...m.years.map((y,i)=> i===N-1 ? y.dividends+m.equityValue : y.dividends)];
+  const equityIRR = irr(equityCF);
+
+  // Project IRR: -(principal+equity0) at t0, then unlevered FCF, + terminal value (undiscounted) at last year
+  const investedCapital = m.principal + equity0;
+  const projectCF = [-investedCapital, ...m.fcf.map((f,i)=> i===N-1 ? f+m.tv : f)];
+  const projectIRR = irr(projectCF);
+
+  const minDSCR = Math.min(...creditRows.map(r=>r.dscr).filter(v=>isFinite(v)));
+  const minLLCR = Math.min(...rows.map(r=>r.llcr).filter(v=>isFinite(v)));
+  const maxLTV = Math.max(...rows.map(r=>r.ltv).filter(v=>isFinite(v)));
+
+  el('bankKpi').innerHTML = `
+    <div class="kpi"><div class="label">Equity IRR</div><div class="value mono ${equityIRR>0.15?'':''}" style="color:${equityIRR>=0.15?'var(--positive)':'var(--negative)'}">${isFinite(equityIRR)?pct(equityIRR*100):'—'}</div></div>
+    <div class="kpi"><div class="label">Project IRR</div><div class="value mono">${isFinite(projectIRR)?pct(projectIRR*100):'—'}</div></div>
+    <div class="kpi"><div class="label">أدنى DSCR عبر السنوات</div><div class="value mono" style="color:${minDSCR>=1.25?'var(--positive)':'var(--negative)'}">${x(minDSCR)}</div></div>
+    <div class="kpi"><div class="label">أقصى LTV عبر السنوات</div><div class="value mono" style="color:${maxLTV<=0.70?'var(--positive)':'var(--negative)'}">${pct(maxLTV*100)}</div></div>
+  `;
+
+  let html = `<tr><th>البند</th>`+rows.map(r=>`<th>Y${yearLabel(r.t)}</th>`).join('')+`</tr>`;
+  html += `<tr><td>DSCR</td>`+creditRows.map(r=>`<td>${x(r.dscr)}</td>`).join('')+`</tr>`;
+  html += `<tr><td>LLCR (تغطية عمر القرض)</td>`+rows.map(r=>`<td>${x(r.llcr)}</td>`).join('')+`</tr>`;
+  html += `<tr><td>PLCR (تغطية عمر المشروع)</td>`+rows.map(r=>`<td>${x(r.plcr)}</td>`).join('')+`</tr>`;
+  html += `<tr><td>Debt Yield (EBITDA/رصيد الدين)</td>`+rows.map(r=>`<td>${pct(r.debtYield*100)}</td>`).join('')+`</tr>`;
+  html += `<tr><td>LTV (رصيد الدين/EV)</td>`+rows.map(r=>`<td>${pct(r.ltv*100)}</td>`).join('')+`</tr>`;
+  el('bankMetricsTable').innerHTML = html;
+}
+
+// ---------------- Database (window.storage) ----------------
+function collectDealInputs(){
+  const data = {};
+  document.querySelectorAll('input, select').forEach(i=>{ if(i.id) data[i.id]=i.value; });
+  data.__hotelYearData = hotelYearData;
+  data.__tranches = tranches;
+  data.__capInterest = capInterest;
+  data.__periods = periods;
+  return data;
+}
+function applyDealInputs(data){
+  Object.keys(data).forEach(k=>{
+    if(k.startsWith('__')) return;
+    const elx = document.getElementById(k);
+    if(elx) elx.value = data[k];
+  });
+  if(data.__hotelYearData) hotelYearData = data.__hotelYearData;
+  if(data.__tranches) tranches = data.__tranches;
+  if(data.__capInterest) capInterest = data.__capInterest;
+  if(data.__periods) periods = data.__periods;
+  el('activityType').dispatchEvent(new Event('change'));
+  buildHotelYearTable(); renderTranches(); renderRepayTable();
+  compute();
+}
+// ---------------- Supabase auth + real database ----------------
+const SUPABASE_URL = 'https://kkztnksusxbghylsvfgt.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtrenRua3N1c3hiZ2h5bHN2Zmd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ0NTkyOTcsImV4cCI6MjEwMDAzNTI5N30.HQ9kqxT0bkq4j9Ww2yuXXUavQWkxEXOoGXlkeupeTCg';
+let supabaseClient = null;
+try{
+  if(typeof window!=='undefined' && window.supabase && window.supabase.createClient){
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+}catch(e){ console.error('Supabase init failed', e); }
+
+async function checkAuthState(){
+  if(!supabaseClient){ showAuthOverlay('تعذر تحميل مكتبة Supabase — تأكد إنك متصل بالإنترنت وحدّث الصفحة.'); return; }
+  const { data:{ session } } = await supabaseClient.auth.getSession();
+  if(session){ showMainApp(); await loadDealsList(); await loadLatestDealAuto(); }
+  else { showAuthOverlay(); }
+  supabaseClient.auth.onAuthStateChange(async (event, session)=>{
+    if(session){ showMainApp(); await loadDealsList(); await loadLatestDealAuto(); } else { showAuthOverlay(); }
+  });
+}
+async function loadLatestDealAuto(){
+  if(!storageAvailable()) return;
+  try{
+    const { data, error } = await supabaseClient.from('deals').select('id,name,data,saved_at').order('saved_at', {ascending:false}).limit(1);
+    if(error || !data || !data.length) return;
+    applyDealInputs(data[0].data);
+    el('saveDealName').value = data[0].name;
+    el('saveStatus').textContent = `تم تحميل آخر صفقة محفوظة تلقائيًا: ${data[0].name} — ${new Date(data[0].saved_at).toLocaleString('ar-EG')}`;
+    el('saveStatus').style.color = 'var(--positive)';
+  }catch(err){ /* silent — user can still open manually from the list */ }
+}
+function showMainApp(){ el('authOverlay').style.display='none'; el('mainApp').style.display='block'; }
+function showAuthOverlay(msg){ el('authOverlay').style.display='flex'; el('mainApp').style.display='none'; if(msg){ el('authError').textContent = msg; } }
+
+async function handleLogin(){
+  const email = el('authEmail').value.trim(), password = el('authPassword').value;
+  el('authError').textContent=''; el('authStatus').textContent='جارِ الدخول...';
+  if(!supabaseClient){ el('authError').textContent='الخدمة غير متاحة حاليًا.'; return; }
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if(error){ el('authError').textContent = error.message; el('authStatus').textContent=''; }
+}
+async function handleSignup(){
+  const email = el('authEmail').value.trim(), password = el('authPassword').value;
+  el('authError').textContent=''; el('authStatus').textContent='جارِ إنشاء الحساب...';
+  if(!supabaseClient){ el('authError').textContent='الخدمة غير متاحة حاليًا.'; return; }
+  if(password.length<6){ el('authError').textContent='كلمة المرور لازم تكون 6 حروف/أرقام على الأقل.'; el('authStatus').textContent=''; return; }
+  const { error } = await supabaseClient.auth.signUp({ email, password });
+  if(error){ el('authError').textContent = error.message; el('authStatus').textContent=''; }
+  else { el('authStatus').textContent='تم إنشاء الحساب! لو مطلوب تأكيد، افتح إيميلك ودوس على رابط التأكيد ثم سجّل الدخول.'; }
+}
+async function handleLogout(){
+  if(!supabaseClient) return;
+  await supabaseClient.auth.signOut();
+}
+
+function storageAvailable(){ return !!supabaseClient; }
+
+// ---------------- Portable JSON config export/import (works anywhere, no login needed) ----------------
+function startNewProject(){
+  if(!confirm('هيتم إعادة ضبط كل الحقول لقالب فارغ جاهز للتعبئة. أي تعديلات حالية غير محفوظة هتضيع. متأكد؟')) return;
+  if(!confirm('تأكيد أخير: احفظت شغلك الحالي (حفظ سريع أو تصدير JSON)؟ لو أيوه، دوس OK للمتابعة.')) return;
+  window.location.reload();
+}
+
+function exportConfigJSON(){
+  try{
+    const payload = { savedAt:new Date().toISOString(), appVersion:'unified-financing-system', data:collectDealInputs() };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const fname = (el('dealName').value||'Deal').replace(/[^\w\u0600-\u06FF]+/g,'_') + '_config.json';
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    el('configStatus').textContent = `تم تصدير: ${fname} — احفظه على GitHub/Google Drive/إيميلك`;
+    el('configStatus').style.color = 'var(--positive)';
+  }catch(err){
+    el('configStatus').textContent = 'خطأ في التصدير: '+err.message;
+    el('configStatus').style.color = 'var(--negative)';
+  }
+}
+function importConfigJSON(evt){
+  const f = evt.target.files[0]; if(!f) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const payload = JSON.parse(e.target.result);
+      const data = payload.data || payload; // tolerate raw data or wrapped payload
+      applyDealInputs(data);
+      el('configStatus').textContent = `تم استيراد الإعدادات بنجاح من: ${f.name}`;
+      el('configStatus').style.color = 'var(--positive)';
+    }catch(err){
+      el('configStatus').textContent = 'ملف غير صالح: '+err.message;
+      el('configStatus').style.color = 'var(--negative)';
+    }
+  };
+  reader.readAsText(f);
+}
+async function quickSave(){
+  const nameField = el('saveDealName');
+  if(!nameField.value.trim()){
+    nameField.value = (el('dealName').value||'Deal') + ' — ' + new Date().toLocaleString('ar-EG');
+  }
+  if(storageAvailable()){
+    await saveDeal();
+  }
+  exportConfigJSON();
+  const statusEl = el('saveStatus');
+  if(statusEl) statusEl.textContent += (statusEl.textContent? ' | ':'') + 'تم أيضًا تصدير نسخة JSON على جهازك.';
+}
+
+async function saveDeal(){
+  const name = el('saveDealName').value.trim();
+  if(!name){ alert('اكتب اسم للصفقة الأول'); return; }
+  if(!storageAvailable()){ el('saveStatus').textContent='الخدمة غير متاحة حاليًا.'; el('saveStatus').style.color='var(--negative)'; return; }
+  try{
+    const { data:{ user } } = await supabaseClient.auth.getUser();
+    const { error } = await supabaseClient.from('deals').insert({ user_id:user.id, name, data:collectDealInputs() });
+    if(error) throw error;
+    el('saveStatus').textContent = `تم الحفظ: ${name} — ${new Date().toLocaleString('ar-EG')}`;
+    el('saveStatus').style.color='var(--positive)';
+    loadDealsList();
+  }catch(err){ el('saveStatus').textContent = 'خطأ في الحفظ: '+err.message; el('saveStatus').style.color='var(--negative)'; }
+}
+async function loadDealsList(){
+  if(!storageAvailable()) return;
+  try{
+    const { data, error } = await supabaseClient.from('deals').select('id,name,saved_at').order('saved_at', {ascending:false});
+    if(error) throw error;
+    if(!data.length){ el('dealsListBody').innerHTML = '<span style="font-size:12px;color:var(--ink-500);">لا توجد صفقات محفوظة بعد.</span>'; return; }
+    el('dealsListBody').innerHTML = data.map(row=>`
+      <div class="cov-row"><div><div class="cov-name">${row.name}</div><div class="cov-detail">حُفظت: ${new Date(row.saved_at).toLocaleString('ar-EG')}</div></div>
+        <div><button class="btn no-print" onclick='loadDealByKey("${row.id}")'>فتح</button> <button class="btn no-print" onclick='deleteDeal("${row.id}")'>حذف</button></div></div>`).join('');
+  }catch(err){ el('dealsListBody').innerHTML = 'تعذر تحميل القائمة: '+err.message; }
+}
+async function loadDealByKey(id){
+  if(!storageAvailable()) return;
+  try{
+    const { data, error } = await supabaseClient.from('deals').select('name,data').eq('id', id).single();
+    if(error) throw error;
+    applyDealInputs(data.data);
+    alert('تم فتح الصفقة: '+data.name);
+  }catch(err){ alert('خطأ في الفتح: '+err.message); }
+}
+async function deleteDeal(id){
+  if(!storageAvailable()) return;
+  if(!confirm('حذف هذه الصفقة نهائيًا؟')) return;
+  try{ await supabaseClient.from('deals').delete().eq('id', id); loadDealsList(); }catch(err){ alert('خطأ: '+err.message); }
+}
+
+// ---------------- Excel export (SheetJS) ----------------
+function statementToAOA(title, rows, years){
+  const aoa = [[title], ['Item', ...years.map(y=>'Y'+yearLabel(y))]];
+  rows.forEach(r=>{
+    if(r.section){ aoa.push([r.section]); return; }
+    aoa.push([r.label, ...r.values.map(v=> isFinite(v)? Math.round(v): v)]);
+  });
+  return aoa;
+}
+function exportToExcel(){
+  if(!MODEL){ alert('من فضلك انتظر اكتمال الحساب'); return; }
+  const m = MODEL, N=m.N, years = m.years.map(y=>y.t);
+  const wb = XLSX.utils.book_new();
+
+  const isRows = [
+    {label:'الإيرادات', values:m.years.map(y=>y.revenue)},
+    {label:'EBITDA', values:m.years.map(y=>y.ebitda)},
+    {label:'إهلاك', values:m.years.map(y=>-y.depreciation)},
+    {label:'EBIT', values:m.years.map(y=>y.ebit)},
+    {label:'مصروف الفوائد', values:m.years.map(y=>-y.interest)},
+    {label:'الربح قبل الضريبة', values:m.years.map(y=>y.ebt)},
+    {label:'الضريبة', values:m.years.map(y=>-y.tax)},
+    {label:'صافي الربح', values:m.years.map(y=>y.netIncome)},
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(statementToAOA('Income Statement', isRows, years)), 'Income Statement');
+
+  const bsRows = [
+    {section:'Assets'},
+    {label:'Cash', values:m.years.map(y=>y.cashClose)},
+    {label:'AR', values:m.years.map(y=>y.arClose)},
+    {label:'Inventory', values:m.years.map(y=>y.invClose)},
+    {label:'Net PP&E', values:m.years.map(y=>y.ppeClose)},
+    {label:'Total Assets', values:m.years.map(y=>y.totalAssets)},
+    {section:'Liabilities & Equity'},
+    {label:'AP', values:m.years.map(y=>y.apClose)},
+    {label:'Total Debt', values:m.years.map(y=>y.totalDebt)},
+    {label:'Equity', values:m.years.map(y=>y.equityClose)},
+    {label:'Total Liab & Equity', values:m.years.map(y=>y.totalLiabEq)},
+    {label:'Balance Check', values:m.years.map(y=>y.checkDiff)},
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(statementToAOA('Balance Sheet', bsRows, years)), 'Balance Sheet');
+
+  const cfRows = [
+    {label:'Net Income', values:m.years.map(y=>y.netIncome)},
+    {label:'+ Depreciation', values:m.years.map(y=>y.depreciation)},
+    {label:'Change in WC', values:m.years.map(y=>-y.dWC)},
+    {label:'CFO', values:m.years.map(y=>y.cfo)},
+    {label:'Capex', values:m.years.map(y=>-y.capex)},
+    {label:'CFI', values:m.years.map(y=>y.cfi)},
+    {label:'Debt Repayment', values:m.years.map(y=>-y.debtRepay)},
+    {label:'Dividends', values:m.years.map(y=>-y.dividends)},
+    {label:'CFF', values:m.years.map(y=>y.cff)},
+    {label:'Net Change in Cash', values:m.years.map(y=>y.netCF)},
+    {label:'Closing Cash', values:m.years.map(y=>y.cashClose)},
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(statementToAOA('Cash Flow', cfRows, years)), 'Cash Flow');
+
+  const debtAoa = [['Debt Service Schedule (Annual)'], ['Year','Draw','Interest','Principal Repayment','Closing Balance']];
+  m.years.forEach(y=> debtAoa.push([y.t, y.debtDraw||0, Math.round(y.interest), Math.round(y.debtRepay), Math.round(y.facilityBal)]));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(debtAoa), 'Debt Schedule');
+
+  const creditAoa = [['Credit & Bank Metrics'], ['Year','Leverage(x)','Coverage(x)','DSCR(x)','Current Ratio(x)','Rating']];
+  const creditRowsExp = m.years.map(y=>{
+    if(y.isConstruction) return [y.t, '—','—','—','—','Construction'];
+    const leverage=y.totalDebt/(y.ebitda||1), coverage=y.ebitda/(y.interest||1);
+    const dscr=y.ebitda/((y.interest+y.debtRepay)||1);
+    const currentRatio=(y.cashClose+y.arClose+y.invClose)/((y.apClose)||1);
+    const r=ratingFor(leverage,coverage,currentRatio, y.revenue>0?y.ebitda/y.revenue:0, y.netIncome/(y.equityClose||1));
+    return [y.t, leverage.toFixed(2), coverage.toFixed(2), dscr.toFixed(2), currentRatio.toFixed(2), r.band.grade];
+  });
+  creditRowsExp.forEach(r=>creditAoa.push(r));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(creditAoa), 'Credit Metrics');
+
+  const valAoa = [['Valuation'], ['Metric','Value'],
+    ['WACC', pct(m.wacc*100)], ['Enterprise Value', Math.round(m.ev)], ['Equity Value', Math.round(m.equityValue)],
+    ['Total Facility Principal', Math.round(m.principal)], ['All-in Rate', pct(m.allInRate*100)]];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(valAoa), 'Valuation');
+
+  const fname = (el('dealName').value||'Deal').replace(/[^\w\u0600-\u06FF]+/g,'_') + '_FinancingModel.xlsx';
+  XLSX.writeFile(wb, fname);
+}
+
+document.querySelectorAll('input, select').forEach(i=> i.addEventListener('input', ()=>{ if(document.activeElement!==el('projYears')) compute(); }));
+document.querySelectorAll('.tab-panel.active').forEach(p=> p.classList.add('print-active'));
+applyStaticLang();
+compute();
+checkAuthState();
+</script>
+</body>
+</html>
